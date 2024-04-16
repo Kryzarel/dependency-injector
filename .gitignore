@@ -1,0 +1,20 @@
+# Ignore everything
+*
+
+# But not these files/folders...
+!.gitignore
+!/Assets/
+!/Assets/**
+!/ProjectSettings/
+!/ProjectSettings/**
+!/Packages/
+!/Packages/**
+
+# Ignore all these files no matter the folder
+Thumbs.db
+Thumbs.db.meta
+.DS_Store
+UnityVS/
+UnityVS*
+VSCode/
+VSCode*
