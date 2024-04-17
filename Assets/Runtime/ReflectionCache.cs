@@ -1,0 +1,131 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+
+namespace Kryz.DI
+{
+	public class ReflectionCache
+	{
+		public class MethodData
+		{
+
+		}
+
+		public class InjectionInfo
+		{
+			public readonly ConstructorInfo Constructor;
+			public readonly IReadOnlyList<Type> ConstructorParams;
+			public readonly IReadOnlyList<FieldInfo> Fields;
+			public readonly IReadOnlyList<PropertyInfo> Properties;
+			public readonly IReadOnlyList<MethodInfo> Methods;
+			public readonly IReadOnlyList<IReadOnlyList<Type>> MethodParams;
+
+			public InjectionInfo(ConstructorInfo constructor,
+				IReadOnlyList<Type> constructorParams,
+				IReadOnlyList<FieldInfo> fields,
+				IReadOnlyList<PropertyInfo> properties,
+				IReadOnlyList<MethodInfo> methods,
+				IReadOnlyList<IReadOnlyList<Type>> methodParams)
+			{
+				Constructor = constructor;
+				ConstructorParams = constructorParams;
+				Fields = fields;
+				Properties = properties;
+				Methods = methods;
+				MethodParams = methodParams;
+			}
+		}
+
+		private const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+
+		private static readonly Type injectAttribute = typeof(InjectAttribute);
+
+		private readonly Dictionary<Type, InjectionInfo> cache = new();
+		private readonly List<Type> constructorParams = new();
+		private readonly List<FieldInfo> fields = new();
+		private readonly List<PropertyInfo> properties = new();
+		private readonly List<MethodInfo> methods = new();
+
+		public InjectionInfo Get(Type type)
+		{
+			if (!cache.TryGetValue(type, out InjectionInfo info))
+			{
+				info = ProcessType(type);
+				cache[type] = info;
+			}
+			return info;
+		}
+
+		private InjectionInfo ProcessType(Type type)
+		{
+			ConstructorInfo constructor = null;
+			ConstructorInfo[] constructors = type.GetConstructors(flags);
+
+			if (constructors.Length == 1)
+			{
+				constructor = constructors[0];
+			}
+			else if (constructors.Length > 1)
+			{
+				foreach (ConstructorInfo item in constructors)
+				{
+					if (item.IsDefined(injectAttribute))
+					{
+						constructor = item;
+						break;
+					}
+				}
+			}
+
+			if (constructor != null)
+			{
+				foreach (ParameterInfo item in constructor.GetParameters())
+				{
+					constructorParams.Add(item.ParameterType);
+				}
+			}
+
+			GetMembersWithAttribute(type.GetFields(flags), injectAttribute, fields);
+			GetMembersWithAttribute(type.GetProperties(flags), injectAttribute, properties);
+			GetMembersWithAttribute(type.GetMethods(flags), injectAttribute, methods);
+
+			Type[][] methodParams = new Type[methods.Count][];
+			for (int i = 0; i < methodParams.Length; i++)
+			{
+				ParameterInfo[] parameters = methods[i].GetParameters();
+				methodParams[i] = new Type[parameters.Length];
+
+				for (int j = 0; j < methodParams.Length; j++)
+				{
+					methodParams[i][j] = parameters[j].ParameterType;
+				}
+			}
+
+			InjectionInfo injectionInfo = new(
+				constructor,
+				constructorParams.ToArray(),
+				fields.ToArray(),
+				properties.ToArray(),
+				methods.ToArray(),
+				methodParams);
+
+			constructorParams.Clear();
+			fields.Clear();
+			properties.Clear();
+			methods.Clear();
+
+			return injectionInfo;
+		}
+
+		private static void GetMembersWithAttribute<T>(IReadOnlyList<T> members, Type attribute, List<T> results) where T : MemberInfo
+		{
+			foreach (T item in members)
+			{
+				if (item.IsDefined(attribute))
+				{
+					results.Add(item);
+				}
+			}
+		}
+	}
+}

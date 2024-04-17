@@ -3,25 +3,13 @@ using System.Collections.Generic;
 
 namespace Kryz.DI
 {
-	public class Container
+	public class Container : ITypeResolver
 	{
-		private readonly struct Registration
-		{
-			public readonly object Object;
-			public readonly Type Type;
-
-			public Registration(object obj, Type type)
-			{
-				Object = obj;
-				Type = type;
-			}
-		}
-
 		public readonly Container Parent;
 		public readonly IList<Container> Children;
 
 		private readonly List<Container> children = new();
-		private readonly Dictionary<Type, Registration> objects = new();
+		private readonly Dictionary<Type, object> objects = new();
 
 		public Container(Container parent = null)
 		{
@@ -36,21 +24,45 @@ namespace Kryz.DI
 			return child;
 		}
 
+		public T Get<T>()
+		{
+			return (T)objects[typeof(T)];
+		}
+
+		public bool TryGet<T>(out T obj)
+		{
+			if (objects[typeof(T)] is T o)
+			{
+				obj = o;
+				return true;
+			}
+			obj = default;
+			return false;
+		}
+
+		public object Get(Type type) => objects[type];
+
+		public bool TryGet(Type type, out object obj) => objects.TryGetValue(type, out obj);
+
+		public Container AddSingleton<T>(T obj) => AddSingleton<T, T>(obj);
+		public Container AddScoped<T>(T obj) => AddScoped<T, T>(obj);
+		public Container AddTransient<T>() => AddTransient<T, T>();
+
 		public Container AddSingleton<TBase, TDerived>(TDerived obj) where TDerived : TBase
 		{
-			GetRootContainer().objects[typeof(TBase)] = new Registration(obj, typeof(TDerived));
+			GetRootContainer().objects[typeof(TBase)] = obj;
 			return this;
 		}
 
 		public Container AddScoped<TBase, TDerived>(TDerived obj) where TDerived : TBase
 		{
-			objects[typeof(TBase)] = new Registration(obj, typeof(TDerived));
+			objects[typeof(TBase)] = obj;
 			return this;
 		}
 
 		public Container AddTransient<TBase, TDerived>() where TDerived : TBase
 		{
-			objects[typeof(TBase)] = new Registration(null, typeof(TDerived));
+			objects[typeof(TBase)] = null;
 			return this;
 		}
 
