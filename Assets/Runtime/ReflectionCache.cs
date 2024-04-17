@@ -6,11 +6,6 @@ namespace Kryz.DI
 {
 	public class ReflectionCache
 	{
-		public class MethodData
-		{
-
-		}
-
 		public class InjectionInfo
 		{
 			public readonly ConstructorInfo Constructor;
@@ -58,48 +53,12 @@ namespace Kryz.DI
 
 		private InjectionInfo ProcessType(Type type)
 		{
-			ConstructorInfo constructor = null;
-			ConstructorInfo[] constructors = type.GetConstructors(flags);
-
-			if (constructors.Length == 1)
-			{
-				constructor = constructors[0];
-			}
-			else if (constructors.Length > 1)
-			{
-				foreach (ConstructorInfo item in constructors)
-				{
-					if (item.IsDefined(injectAttribute))
-					{
-						constructor = item;
-						break;
-					}
-				}
-			}
-
-			if (constructor != null)
-			{
-				foreach (ParameterInfo item in constructor.GetParameters())
-				{
-					constructorParams.Add(item.ParameterType);
-				}
-			}
+			ConstructorInfo constructor = GetInjectConstructor(type);
+			GetConstructorParamTypes(constructor, constructorParams);
 
 			GetMembersWithAttribute(type.GetFields(flags), injectAttribute, fields);
 			GetMembersWithAttribute(type.GetProperties(flags), injectAttribute, properties);
 			GetMembersWithAttribute(type.GetMethods(flags), injectAttribute, methods);
-
-			Type[][] methodParams = new Type[methods.Count][];
-			for (int i = 0; i < methodParams.Length; i++)
-			{
-				ParameterInfo[] parameters = methods[i].GetParameters();
-				methodParams[i] = new Type[parameters.Length];
-
-				for (int j = 0; j < methodParams.Length; j++)
-				{
-					methodParams[i][j] = parameters[j].ParameterType;
-				}
-			}
 
 			InjectionInfo injectionInfo = new(
 				constructor,
@@ -107,7 +66,7 @@ namespace Kryz.DI
 				fields.ToArray(),
 				properties.ToArray(),
 				methods.ToArray(),
-				methodParams);
+				GetMethodParamTypes(methods));
 
 			constructorParams.Clear();
 			fields.Clear();
@@ -115,6 +74,38 @@ namespace Kryz.DI
 			methods.Clear();
 
 			return injectionInfo;
+		}
+
+		private static ConstructorInfo GetInjectConstructor(Type type)
+		{
+			ConstructorInfo[] constructors = type.GetConstructors(flags);
+
+			if (constructors.Length == 1)
+			{
+				return constructors[0];
+			}
+			else if (constructors.Length > 1)
+			{
+				foreach (ConstructorInfo item in constructors)
+				{
+					if (item.IsDefined(injectAttribute))
+					{
+						return item;
+					}
+				}
+			}
+			return null;
+		}
+
+		private static void GetConstructorParamTypes(ConstructorInfo constructor, List<Type> constructorParams)
+		{
+			if (constructor != null)
+			{
+				foreach (ParameterInfo item in constructor.GetParameters())
+				{
+					constructorParams.Add(item.ParameterType);
+				}
+			}
 		}
 
 		private static void GetMembersWithAttribute<T>(IReadOnlyList<T> members, Type attribute, List<T> results) where T : MemberInfo
@@ -126,6 +117,22 @@ namespace Kryz.DI
 					results.Add(item);
 				}
 			}
+		}
+
+		private static Type[][] GetMethodParamTypes(IReadOnlyList<MethodInfo> methods)
+		{
+			Type[][] methodParams = new Type[methods.Count][];
+			for (int i = 0; i < methodParams.Length; i++)
+			{
+				ParameterInfo[] parameters = methods[i].GetParameters();
+				methodParams[i] = new Type[parameters.Length];
+
+				for (int j = 0; j < methodParams.Length; j++)
+				{
+					methodParams[i][j] = parameters[j].ParameterType;
+				}
+			}
+			return methodParams;
 		}
 	}
 }

@@ -15,13 +15,15 @@ namespace Kryz.DI
 
 			if (info.Constructor != null)
 			{
-				object[] constructorParams = new object[info.ConstructorParams.Count];
+				object[] constructorParams = ExactArrayPool<object>.Shared.Rent(info.ConstructorParams.Count);
 				for (int i = 0; i < info.ConstructorParams.Count; i++)
 				{
 					Type item = info.ConstructorParams[i];
 					constructorParams[i] = typeResolver.Get(item);
 				}
-				return info.Constructor.Invoke(constructorParams);
+				object obj = info.Constructor.Invoke(constructorParams);
+				ExactArrayPool<object>.Shared.Return(constructorParams, clearArray: true);
+				return obj;
 			}
 			return FormatterServices.GetUninitializedObject(type);
 		}
@@ -47,12 +49,13 @@ namespace Kryz.DI
 				MethodInfo item = info.Methods[i];
 				IReadOnlyList<Type> paramTypes = info.MethodParams[i];
 
-				object[] objects = new object[paramTypes.Count];
+				object[] objects = ExactArrayPool<object>.Shared.Rent(paramTypes.Count);
 				for (int j = 0; j < objects.Length; j++)
 				{
 					objects[j] = typeResolver.Get(paramTypes[j]);
 				}
 				item.Invoke(obj, objects);
+				ExactArrayPool<object>.Shared.Return(objects, clearArray: true);
 			}
 		}
 	}
