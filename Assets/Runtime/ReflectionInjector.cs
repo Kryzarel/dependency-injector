@@ -8,6 +8,13 @@ namespace Kryz.DI
 	public class ReflectionInjector
 	{
 		private readonly ReflectionCache reflectionCache = new();
+		// If you have a method with 128 parameters or more, kindly reconsider.
+		private readonly object[][] paramCache = new object[128][];
+
+		public ReflectionInjector()
+		{
+			paramCache[0] = Array.Empty<object>();
+		}
 
 		public object CreateObject(Type type, ITypeResolver typeResolver)
 		{
@@ -15,14 +22,15 @@ namespace Kryz.DI
 
 			if (info.Constructor != null)
 			{
-				object[] constructorParams = ExactArrayPool<object>.Shared.Rent(info.ConstructorParams.Count);
-				for (int i = 0; i < info.ConstructorParams.Count; i++)
+				int paramLength = info.ConstructorParams.Count;
+				object[] constructorParams = GetFromParamCache(paramLength);
+				for (int i = 0; i < paramLength; i++)
 				{
 					Type item = info.ConstructorParams[i];
 					constructorParams[i] = typeResolver.Get(item);
 				}
 				object obj = info.Constructor.Invoke(constructorParams);
-				ExactArrayPool<object>.Shared.Return(constructorParams, clearArray: true);
+				ReturnToParamCache(constructorParams);
 				return obj;
 			}
 			return FormatterServices.GetUninitializedObject(type);
@@ -49,13 +57,28 @@ namespace Kryz.DI
 				MethodInfo item = info.Methods[i];
 				IReadOnlyList<Type> paramTypes = info.MethodParams[i];
 
-				object[] objects = ExactArrayPool<object>.Shared.Rent(paramTypes.Count);
+				object[] objects = GetFromParamCache(paramTypes.Count);
 				for (int j = 0; j < objects.Length; j++)
 				{
 					objects[j] = typeResolver.Get(paramTypes[j]);
 				}
 				item.Invoke(obj, objects);
-				ExactArrayPool<object>.Shared.Return(objects, clearArray: true);
+				ReturnToParamCache(objects);
+			}
+		}
+
+		private object[] GetFromParamCache(int length)
+		{
+			return length < paramCache.Length ? (paramCache[length] ??= new object[length]) : new object[length];
+		}
+
+		private void ReturnToParamCache(object[] parameters)
+		{
+			int length = parameters.Length;
+			if (length < paramCache.Length)
+			{
+				Array.Clear(parameters, 0, length);
+				paramCache[length] = parameters;
 			}
 		}
 	}

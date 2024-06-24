@@ -62,10 +62,10 @@ namespace Kryz.DI
 
 			InjectionInfo injectionInfo = new(
 				constructor,
-				constructorParams.ToArray(),
-				fields.ToArray(),
-				properties.ToArray(),
-				methods.ToArray(),
+				GetArray(constructorParams),
+				GetArray(fields),
+				GetArray(properties),
+				GetArray(methods),
 				GetMethodParamTypes(methods));
 
 			constructorParams.Clear();
@@ -101,20 +101,15 @@ namespace Kryz.DI
 		{
 			if (constructor != null)
 			{
-				foreach (ParameterInfo item in constructor.GetParameters())
+				ParameterInfo[] parameters = constructor.GetParameters();
+				if (constructorParams.Capacity < parameters.Length)
+				{
+					constructorParams.Capacity = parameters.Length;
+				}
+
+				foreach (ParameterInfo item in parameters)
 				{
 					constructorParams.Add(item.ParameterType);
-				}
-			}
-		}
-
-		private static void GetMembersWithAttribute<T>(IReadOnlyList<T> members, Type attribute, List<T> results) where T : MemberInfo
-		{
-			foreach (T item in members)
-			{
-				if (item.IsDefined(attribute))
-				{
-					results.Add(item);
 				}
 			}
 		}
@@ -133,6 +128,22 @@ namespace Kryz.DI
 				}
 			}
 			return methodParams;
+		}
+
+		private static void GetMembersWithAttribute<T>(IReadOnlyList<T> members, Type attribute, List<T> results) where T : MemberInfo
+		{
+			foreach (T item in members)
+			{
+				if (item.IsDefined(attribute))
+				{
+					results.Add(item);
+				}
+			}
+		}
+
+		private static T[] GetArray<T>(List<T> list)
+		{
+			return list.Count > 0 ? list.ToArray() : Array.Empty<T>();
 		}
 	}
 }

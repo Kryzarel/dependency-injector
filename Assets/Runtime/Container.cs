@@ -18,11 +18,12 @@ namespace Kryz.DI
 		}
 
 		public readonly Container Parent;
-		public readonly IList<Container> Children;
+		public readonly IReadOnlyList<Container> Children;
 
 		private readonly List<Container> children = new();
 		private readonly Dictionary<Type, Registration> objects = new();
-		private readonly ReflectionInjector reflectionInjector = new();
+
+		private static readonly ReflectionInjector reflectionInjector = new();
 
 		public Container(Container parent = null)
 		{
@@ -37,16 +38,16 @@ namespace Kryz.DI
 			return child;
 		}
 
+		public bool RemoveChild(Container child)
+		{
+			return children.Remove(child);
+		}
+
 		public object Get(Type type)
 		{
-			Container container = this;
-			while (container != null)
+			if (TryGet(type, out object obj))
 			{
-				if (container.objects.TryGetValue(type, out Registration registration))
-				{
-					return registration.Value ?? CreateAndInject(registration.Type);
-				}
-				container = Parent;
+				return obj;
 			}
 			throw new InjectionException($"Failed to get registration for type {type.FullName}");
 		}
