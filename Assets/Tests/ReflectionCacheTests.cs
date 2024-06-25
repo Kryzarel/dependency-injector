@@ -1,0 +1,175 @@
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using NUnit.Framework;
+
+namespace Kryz.DI.Tests
+{
+	public class ReflectionCacheTests
+	{
+		[Test]
+		public void TestCache()
+		{
+			ReflectionCache reflectionCache = new();
+			Assert.AreEqual(reflectionCache.Get(typeof(A)), reflectionCache.Get(typeof(A)));
+			Assert.AreEqual(reflectionCache.Get(typeof(B)), reflectionCache.Get(typeof(B)));
+			Assert.AreEqual(reflectionCache.Get(typeof(C)), reflectionCache.Get(typeof(C)));
+			Assert.AreEqual(reflectionCache.Get(typeof(D)), reflectionCache.Get(typeof(D)));
+			Assert.AreEqual(reflectionCache.Get(typeof(Empty)), reflectionCache.Get(typeof(Empty)));
+			Assert.AreEqual(reflectionCache.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
+
+			ReflectionCache reflectionCache2 = new();
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(A)), reflectionCache.Get(typeof(A)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(B)), reflectionCache.Get(typeof(B)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(C)), reflectionCache.Get(typeof(C)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(D)), reflectionCache.Get(typeof(D)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(Empty)), reflectionCache.Get(typeof(Empty)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
+		}
+
+		[Test]
+		public void TestCacheSpeed()
+		{
+			ReflectionCache reflectionCache = new();
+
+			Stopwatch stopwatch = new();
+
+			stopwatch.Restart();
+			reflectionCache.Get(typeof(A));
+			stopwatch.Stop();
+			long first = stopwatch.ElapsedTicks;
+
+			stopwatch.Restart();
+			reflectionCache.Get(typeof(A));
+			stopwatch.Stop();
+			long second = stopwatch.ElapsedTicks;
+
+			Assert.Less(second, first);
+		}
+
+		[Test]
+		public void TestInfoEmpty()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<Empty>(
+				hasConstructor: true,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+
+			Assert.AreEqual(typeof(Empty).GetConstructors()[0], info.Constructor);
+		}
+
+		[Test]
+		public void TestInfoEmptyStruct()
+		{
+			TestTypeInfo<EmptyStruct>(
+				hasConstructor: false,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+		}
+
+		[Test]
+		public void TestInfoA()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<A>(
+				hasConstructor: true,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+
+			Assert.AreEqual(typeof(A).GetConstructors()[0], info.Constructor);
+		}
+
+		[Test]
+		public void TestInfoB()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<B>(
+				hasConstructor: true,
+				numConstructorParams: 1,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+
+			Assert.AreEqual(typeof(B).GetConstructors()[0], info.Constructor);
+			Assert.AreEqual(typeof(A), info.ConstructorParams[0]);
+		}
+
+		[Test]
+		public void TestInfoC()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<C>(
+				hasConstructor: true,
+				numConstructorParams: 2,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+
+			Assert.AreEqual(typeof(C).GetConstructors().Single(x => x.IsDefined(typeof(InjectAttribute))), info.Constructor);
+			Assert.AreEqual(typeof(A), info.ConstructorParams[0]);
+			Assert.AreEqual(typeof(B), info.ConstructorParams[1]);
+		}
+
+		[Test]
+		public void TestInfoD()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<D>(
+				hasConstructor: true,
+				numConstructorParams: 0,
+				numFields: 1,
+				numProperties: 1,
+				numMethods: 1);
+
+			Assert.AreEqual(typeof(D).GetConstructors()[0], info.Constructor);
+			Assert.AreEqual(typeof(D).GetField(nameof(D.A)), info.Fields[0]);
+			Assert.AreEqual(typeof(D).GetProperty(nameof(D.B)), info.Properties[0]);
+			Assert.AreEqual(typeof(D).GetMethod(nameof(D.InjectC)), info.Methods[0]);
+		}
+
+		private static ReflectionCache.InjectionInfo TestTypeInfo<T>(bool hasConstructor, int numConstructorParams, int numFields, int numProperties, int numMethods)
+		{
+			Type type = typeof(T);
+			ReflectionCache reflectionCache = new();
+			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
+
+			if (hasConstructor)
+			{
+				Assert.AreNotEqual(null, info.Constructor, "Constructor");
+			}
+			else
+			{
+				Assert.AreEqual(null, info.Constructor, "Constructor");
+			}
+
+			Assert.AreEqual(numConstructorParams, info.ConstructorParams.Count, "Constructor Params");
+			if (numConstructorParams == 0)
+			{
+				Assert.AreEqual(Array.Empty<Type>(), info.ConstructorParams, "Constructor Params");
+			}
+
+			Assert.AreEqual(numFields, info.Fields.Count, "Fields");
+			if (numFields == 0)
+			{
+				Assert.AreEqual(Array.Empty<FieldInfo>(), info.Fields, "Fields");
+			}
+
+			Assert.AreEqual(numProperties, info.Properties.Count, "Properties");
+			if (numProperties == 0)
+			{
+				Assert.AreEqual(Array.Empty<PropertyInfo>(), info.Properties, "Properties");
+			}
+
+			Assert.AreEqual(numMethods, info.Methods.Count, "Methods");
+			if (numMethods == 0)
+			{
+				Assert.AreEqual(Array.Empty<MethodInfo>(), info.Methods, "Methods");
+			}
+
+			return info;
+		}
+	}
+}
