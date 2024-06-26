@@ -8,8 +8,8 @@ namespace Kryz.DI
 	public class ReflectionInjector
 	{
 		private readonly ReflectionCache reflectionCache = new();
-		// If you have a method with 128 parameters or more, kindly reconsider.
-		private readonly object[][] paramCache = new object[128][];
+		// If you have a method with 32 parameters or more, kindly reconsider.
+		private readonly object[][] paramCache = new object[32][];
 
 		public ReflectionInjector()
 		{
@@ -78,7 +78,6 @@ namespace Kryz.DI
 			if (length < paramCache.Length)
 			{
 				Array.Clear(parameters, 0, length);
-				paramCache[length] = parameters;
 			}
 		}
 	}
