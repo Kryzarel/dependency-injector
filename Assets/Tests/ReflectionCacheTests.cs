@@ -12,6 +12,10 @@ namespace Kryz.DI.Tests
 		public void TestCache()
 		{
 			ReflectionCache reflectionCache = new();
+			Assert.AreEqual(reflectionCache.Get(typeof(IA)), reflectionCache.Get(typeof(IA)));
+			Assert.AreEqual(reflectionCache.Get(typeof(IB)), reflectionCache.Get(typeof(IB)));
+			Assert.AreEqual(reflectionCache.Get(typeof(IC)), reflectionCache.Get(typeof(IC)));
+			Assert.AreEqual(reflectionCache.Get(typeof(ID)), reflectionCache.Get(typeof(ID)));
 			Assert.AreEqual(reflectionCache.Get(typeof(A)), reflectionCache.Get(typeof(A)));
 			Assert.AreEqual(reflectionCache.Get(typeof(B)), reflectionCache.Get(typeof(B)));
 			Assert.AreEqual(reflectionCache.Get(typeof(C)), reflectionCache.Get(typeof(C)));
@@ -20,6 +24,10 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(reflectionCache.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
 
 			ReflectionCache reflectionCache2 = new();
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(IA)), reflectionCache.Get(typeof(IA)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(IB)), reflectionCache.Get(typeof(IB)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(IC)), reflectionCache.Get(typeof(IC)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(ID)), reflectionCache.Get(typeof(ID)));
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(A)), reflectionCache.Get(typeof(A)));
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(B)), reflectionCache.Get(typeof(B)));
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(C)), reflectionCache.Get(typeof(C)));
@@ -110,7 +118,7 @@ namespace Kryz.DI.Tests
 				numMethods: 0);
 
 			Assert.AreEqual(typeof(C).GetConstructors().Single(x => x.IsDefined(typeof(InjectAttribute))), info.Constructor);
-			Assert.AreEqual(typeof(A), info.ConstructorParams[0]);
+			Assert.AreEqual(typeof(IA), info.ConstructorParams[0]);
 			Assert.AreEqual(typeof(B), info.ConstructorParams[1]);
 		}
 
@@ -128,6 +136,55 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(typeof(D).GetField(nameof(D.A)), info.Fields[0]);
 			Assert.AreEqual(typeof(D).GetProperty(nameof(D.B)), info.Properties[0]);
 			Assert.AreEqual(typeof(D).GetMethod(nameof(D.InjectC)), info.Methods[0]);
+		}
+
+		[Test]
+		public void TestInfoIA()
+		{
+			TestTypeInfo<IA>(
+				hasConstructor: false,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+		}
+
+		[Test]
+		public void TestInfoIB()
+		{
+			TestTypeInfo<IB>(
+				hasConstructor: false,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 0);
+		}
+
+		[Test]
+		public void TestInfoIC()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<IC>(
+				hasConstructor: false,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 1,
+				numMethods: 0);
+
+			Assert.AreEqual(typeof(IC).GetProperty(nameof(IC.A)), info.Properties[0]);
+		}
+
+		[Test]
+		public void TestInfoID()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<ID>(
+				hasConstructor: false,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 1,
+				numMethods: 1);
+
+			Assert.AreEqual(typeof(ID).GetProperty(nameof(ID.B)), info.Properties[0]);
+			Assert.AreEqual(typeof(ID).GetMethod(nameof(ID.InjectC)), info.Methods[0]);
 		}
 
 		private static ReflectionCache.InjectionInfo TestTypeInfo<T>(bool hasConstructor, int numConstructorParams, int numFields, int numProperties, int numMethods)

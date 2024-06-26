@@ -3,14 +3,26 @@ namespace Kryz.DI.Tests
 	public class Empty { }
 	public struct EmptyStruct { }
 
-	public class A
+	public interface IA { }
+	public interface IB { }
+	public interface IC
 	{
-		public A()
-		{
-		}
+		[Inject]
+		IA A { get; }
+	}
+	public interface ID
+	{
+		[Inject]
+		IB B { get; }
+		[Inject]
+		void InjectC(IC c);
 	}
 
-	public class B
+	public class A : IA
+	{
+	}
+
+	public class B : IB
 	{
 		public readonly A A;
 
@@ -20,33 +32,35 @@ namespace Kryz.DI.Tests
 		}
 	}
 
-	public class C
+	public class C : IC
 	{
-		public readonly A A;
+		public readonly IA A;
 		public readonly B B;
+
+		IA IC.A => A;
 
 		public C()
 		{
 		}
 
 		[Inject]
-		public C(A a, B b)
+		public C(IA a, B b)
 		{
 			A = a;
 			B = b;
 		}
 	}
 
-	public class D
+	public class D : ID
 	{
 		[Inject]
-		public A A;
+		public IA A;
 		[Inject]
-		public B B { get; set; }
-		public C C;
+		public IB B { get; set; }
+		public IC C;
 
 		[Inject]
-		public void InjectC(C c)
+		public void InjectC(IC c)
 		{
 			C = c;
 		}
