@@ -8,12 +8,14 @@ namespace Kryz.DI
 		private readonly struct Registration
 		{
 			public readonly Type Type;
-			public readonly object Value;
+			public readonly object Object;
+			public readonly bool Transient;
 
-			public Registration(Type type, object value)
+			public Registration(Type type, object obj, bool transient = false)
 			{
 				Type = type;
-				Value = value;
+				Object = obj;
+				Transient = transient;
 			}
 		}
 
@@ -59,7 +61,11 @@ namespace Kryz.DI
 			{
 				if (container.objects.TryGetValue(type, out Registration registration))
 				{
-					obj = registration.Value ?? CreateAndInject(registration.Type);
+					obj = registration.Object ?? CreateAndInject(registration.Type);
+					if (registration.Object == null && !registration.Transient)
+					{
+						container.objects[type] = new Registration(registration.Type, obj);
+					}
 					return true;
 				}
 				container = Parent;
@@ -88,14 +94,16 @@ namespace Kryz.DI
 		public Container AddScoped<T>(T obj) => AddScoped<T, T>(obj);
 		public Container AddTransient<T>() => AddTransient<T, T>();
 
-		public Container AddSingleton<TBase, TDerived>() where TDerived : TBase
+		public Container AddSingleton<TBase, TDerived>(bool lazy = false) where TDerived : TBase
 		{
-			return AddSingleton<TBase, TDerived>((TDerived)CreateAndInject(typeof(TDerived)));
+			GetRootContainer().objects[typeof(TBase)] = new Registration(typeof(TDerived), lazy ? null : CreateAndInject<TDerived>());
+			return this;
 		}
 
-		public Container AddScoped<TBase, TDerived>() where TDerived : TBase
+		public Container AddScoped<TBase, TDerived>(bool lazy = false) where TDerived : TBase
 		{
-			return AddScoped<TBase, TDerived>((TDerived)CreateAndInject(typeof(TDerived)));
+			objects[typeof(TBase)] = new Registration(typeof(TDerived), lazy ? null : CreateAndInject<TDerived>());
+			return this;
 		}
 
 		public Container AddSingleton<TBase, TDerived>(TDerived obj) where TDerived : TBase
@@ -112,7 +120,7 @@ namespace Kryz.DI
 
 		public Container AddTransient<TBase, TDerived>() where TDerived : TBase
 		{
-			objects[typeof(TBase)] = new Registration(typeof(TDerived), null);
+			objects[typeof(TBase)] = new Registration(typeof(TDerived), null, true);
 			return this;
 		}
 
@@ -132,5 +140,7 @@ namespace Kryz.DI
 			reflectionInjector.Inject(type, obj, this);
 			return obj;
 		}
+
+		private T CreateAndInject<T>() => (T)CreateAndInject(typeof(T));
 	}
 }
