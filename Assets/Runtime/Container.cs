@@ -24,18 +24,18 @@ namespace Kryz.DI
 
 		private readonly List<Container> children = new();
 		private readonly Dictionary<Type, Registration> objects = new();
+		private readonly ReflectionInjector reflectionInjector;
 
-		private static readonly ReflectionInjector reflectionInjector = new();
-
-		public Container(Container parent = null)
+		public Container(Container parent = null, ReflectionInjector injector = null)
 		{
 			Parent = parent;
 			Children = children;
+			reflectionInjector = injector ?? new();
 		}
 
 		public Container AddChild()
 		{
-			Container child = new(this);
+			Container child = new(this, reflectionInjector);
 			children.Add(child);
 			return child;
 		}
