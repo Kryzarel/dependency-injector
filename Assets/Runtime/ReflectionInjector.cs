@@ -57,13 +57,13 @@ namespace Kryz.DI
 				MethodInfo item = info.Methods[i];
 				IReadOnlyList<Type> paramTypes = info.MethodParams[i];
 
-				object[] objects = GetFromParamCache(paramTypes.Count);
-				for (int j = 0; j < objects.Length; j++)
+				object[] methodParams = GetFromParamCache(paramTypes.Count);
+				for (int j = 0; j < methodParams.Length; j++)
 				{
-					objects[j] = typeResolver.Get(paramTypes[j]);
+					methodParams[j] = typeResolver.Get(paramTypes[j]);
 				}
-				item.Invoke(obj, objects);
-				ReturnToParamCache(objects);
+				item.Invoke(obj, methodParams);
+				ReturnToParamCache(methodParams);
 			}
 		}
 
