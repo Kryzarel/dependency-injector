@@ -90,19 +90,24 @@ namespace Kryz.DI
 			return false;
 		}
 
+		public void Inject<T>(T obj)
+		{
+			reflectionInjector.Inject(typeof(T), obj, this);
+		}
+
 		public Container AddSingleton<T>(T obj) => AddSingleton<T, T>(obj);
 		public Container AddScoped<T>(T obj) => AddScoped<T, T>(obj);
 		public Container AddTransient<T>() => AddTransient<T, T>();
 
 		public Container AddSingleton<TBase, TDerived>(bool lazy = false) where TDerived : TBase
 		{
-			GetRootContainer().objects[typeof(TBase)] = new Registration(typeof(TDerived), lazy ? null : CreateAndInject<TDerived>());
+			AddSingleton<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
 			return this;
 		}
 
 		public Container AddScoped<TBase, TDerived>(bool lazy = false) where TDerived : TBase
 		{
-			objects[typeof(TBase)] = new Registration(typeof(TDerived), lazy ? null : CreateAndInject<TDerived>());
+			AddScoped<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
 			return this;
 		}
 
