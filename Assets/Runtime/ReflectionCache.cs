@@ -122,7 +122,7 @@ namespace Kryz.DI
 				ParameterInfo[] parameters = methods[i].GetParameters();
 				methodParams[i] = new Type[parameters.Length];
 
-				for (int j = 0; j < methodParams.Length; j++)
+				for (int j = 0; j < methodParams[i].Length; j++)
 				{
 					methodParams[i][j] = parameters[j].ParameterType;
 				}

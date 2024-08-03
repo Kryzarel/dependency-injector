@@ -17,6 +17,13 @@ namespace Kryz.DI.Tests
 		[Inject]
 		void InjectC(IC c);
 	}
+	public interface IE
+	{
+		[Inject]
+		void InjectA(IA a);
+		[Inject]
+		void InjectBCD(IB b, IC c, ID d);
+	}
 
 	public class A : IA
 	{
@@ -63,6 +70,28 @@ namespace Kryz.DI.Tests
 		public void InjectC(IC c)
 		{
 			C = c;
+		}
+	}
+
+	public class E : IE
+	{
+		public IA A;
+		public IB B;
+		public IC C;
+		public ID D;
+
+		[Inject]
+		public void InjectA(IA a)
+		{
+			A = a;
+		}
+
+		[Inject]
+		public void InjectBCD(IB b, IC c, ID d)
+		{
+			B = b;
+			C = c;
+			D = d;
 		}
 	}
 }
