@@ -25,6 +25,12 @@ namespace Kryz.DI.Tests
 		void InjectBCD(IB b, IC c, ID d);
 	}
 
+	public interface IGeneric<T1, T2, T3>
+	{
+		[Inject]
+		void Inject123(T1 a, T2 b, T3 c);
+	}
+
 	public class A : IA
 	{
 	}
@@ -92,6 +98,21 @@ namespace Kryz.DI.Tests
 			B = b;
 			C = c;
 			D = d;
+		}
+	}
+
+	public class Generic<T1, T2, T3> : IGeneric<T1, T2, T3>
+	{
+		public T1 A;
+		public T2 B;
+		public T3 C;
+
+		[Inject]
+		public void Inject123(T1 a, T2 b, T3 c)
+		{
+			A = a;
+			B = b;
+			C = c;
 		}
 	}
 }

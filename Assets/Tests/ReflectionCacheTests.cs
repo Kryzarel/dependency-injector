@@ -154,6 +154,20 @@ namespace Kryz.DI.Tests
 		}
 
 		[Test]
+		public void TestInfoGeneric()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<Generic<IA, IB, IC>>(
+				hasConstructor: true,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 1);
+
+			Assert.AreEqual(typeof(Generic<IA, IB, IC>).GetConstructors()[0], info.Constructor);
+			Assert.IsTrue(info.Methods.Contains(typeof(Generic<IA, IB, IC>).GetMethod(nameof(Generic<IA, IB, IC>.Inject123))));
+		}
+
+		[Test]
 		public void TestInfoIA()
 		{
 			TestTypeInfo<IA>(
@@ -214,6 +228,19 @@ namespace Kryz.DI.Tests
 
 			Assert.IsTrue(info.Methods.Contains(typeof(IE).GetMethod(nameof(IE.InjectA))));
 			Assert.IsTrue(info.Methods.Contains(typeof(IE).GetMethod(nameof(IE.InjectBCD))));
+		}
+
+		[Test]
+		public void TestInfoIGeneric()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<IGeneric<IA, IB, IC>>(
+				hasConstructor: false,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 1);
+
+			Assert.IsTrue(info.Methods.Contains(typeof(IGeneric<IA, IB, IC>).GetMethod(nameof(IGeneric<IA, IB, IC>.Inject123))));
 		}
 
 		private static ReflectionCache.InjectionInfo TestTypeInfo<T>(bool hasConstructor, int numConstructorParams, int numFields, int numProperties, int numMethods)
