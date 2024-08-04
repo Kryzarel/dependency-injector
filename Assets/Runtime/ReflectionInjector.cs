@@ -33,7 +33,11 @@ namespace Kryz.DI
 				ReturnToParamCache(constructorParams);
 				return obj;
 			}
-			return FormatterServices.GetUninitializedObject(type);
+			else if (!type.IsAbstract)
+			{
+				return FormatterServices.GetUninitializedObject(type);
+			}
+			return null;
 		}
 
 		public void Inject(Type type, object obj, ITypeResolver typeResolver)
