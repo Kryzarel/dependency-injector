@@ -19,6 +19,7 @@ namespace Kryz.DI
 			}
 		}
 
+		public readonly Container Root;
 		public readonly Container Parent;
 		public readonly IReadOnlyList<Container> Children;
 
@@ -26,11 +27,20 @@ namespace Kryz.DI
 		private readonly Dictionary<Type, Registration> objects = new();
 		private readonly ReflectionInjector reflectionInjector;
 
-		public Container(Container parent = null, ReflectionInjector injector = null)
+		public Container()
 		{
+			Root = null;
+			Parent = null;
+			Children = children;
+			reflectionInjector = new ReflectionInjector();
+		}
+
+		private Container(Container parent, ReflectionInjector injector)
+		{
+			Root = parent.Root ?? parent;
 			Parent = parent;
 			Children = children;
-			reflectionInjector = injector ?? new();
+			reflectionInjector = injector;
 		}
 
 		public Container AddChild()
@@ -101,19 +111,17 @@ namespace Kryz.DI
 
 		public Container AddSingleton<TBase, TDerived>(bool lazy = false) where TDerived : TBase
 		{
-			AddSingleton<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
-			return this;
+			return AddSingleton<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
 		}
 
 		public Container AddScoped<TBase, TDerived>(bool lazy = false) where TDerived : TBase
 		{
-			AddScoped<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
-			return this;
+			return AddScoped<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
 		}
 
 		public Container AddSingleton<TBase, TDerived>(TDerived obj) where TDerived : TBase
 		{
-			GetRootContainer().objects[typeof(TBase)] = new Registration(typeof(TDerived), obj);
+			Root.objects[typeof(TBase)] = new Registration(typeof(TDerived), obj);
 			return this;
 		}
 
@@ -127,16 +135,6 @@ namespace Kryz.DI
 		{
 			objects[typeof(TBase)] = new Registration(typeof(TDerived), null, true);
 			return this;
-		}
-
-		private Container GetRootContainer()
-		{
-			Container container = this;
-			while (container.Parent != null)
-			{
-				container = container.Parent;
-			}
-			return container;
 		}
 
 		private object CreateAndInject(Type type)
