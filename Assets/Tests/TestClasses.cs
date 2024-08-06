@@ -8,12 +8,12 @@ namespace Kryz.DI.Tests
 	public interface IC
 	{
 		[Inject]
-		IA A { get; }
+		IA? A { get; }
 	}
 	public interface ID
 	{
 		[Inject]
-		IB B { get; }
+		IB? B { get; }
 		[Inject]
 		void InjectC(IC c);
 	}
@@ -47,10 +47,10 @@ namespace Kryz.DI.Tests
 
 	public class C : IC
 	{
-		public readonly IA A;
-		public readonly B B;
+		public readonly IA? A;
+		public readonly B? B;
 
-		IA IC.A => A;
+		IA? IC.A => A;
 
 		public C()
 		{
@@ -67,10 +67,10 @@ namespace Kryz.DI.Tests
 	public class D : ID
 	{
 		[Inject]
-		public IA A;
+		public IA? A;
 		[Inject]
-		public IB B { get; set; }
-		public IC C;
+		public IB? B { get; set; }
+		public IC? C;
 
 		[Inject]
 		public void InjectC(IC c)
@@ -81,10 +81,10 @@ namespace Kryz.DI.Tests
 
 	public class E : IE
 	{
-		public IA A;
-		public IB B;
-		public IC C;
-		public ID D;
+		public IA? A;
+		public IB? B;
+		public IC? C;
+		public ID? D;
 
 		[Inject]
 		public void InjectA(IA a)
@@ -103,9 +103,9 @@ namespace Kryz.DI.Tests
 
 	public class Generic<T1, T2, T3> : IGeneric<T1, T2, T3>
 	{
-		public T1 A;
-		public T2 B;
-		public T3 C;
+		public T1? A;
+		public T2? B;
+		public T3? C;
 
 		[Inject]
 		public void Inject123(T1 a, T2 b, T3 c)
