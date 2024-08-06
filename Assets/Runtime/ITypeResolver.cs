@@ -7,7 +7,7 @@ namespace Kryz.DI
 		T Get<T>();
 		object Get(Type type);
 
-		bool TryGet<T>(out T obj);
+		bool TryGet<T>(out T? obj);
 		bool TryGet(Type type, out object? obj);
 	}
 }

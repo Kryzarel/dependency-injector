@@ -14,7 +14,7 @@ namespace Kryz.DI.Tests
 
 			public object Get(Type type) => objects[type];
 
-			public bool TryGet<T>(out T obj)
+			public bool TryGet<T>(out T? obj)
 			{
 				if (objects.TryGetValue(typeof(T), out object o))
 				{
@@ -27,7 +27,7 @@ namespace Kryz.DI.Tests
 
 			public bool TryGet(Type type, out object obj) => objects.TryGetValue(type, out obj);
 
-			public void Add<T1, T2>(T2 obj) where T2 : T1 => objects[typeof(T1)] = obj;
+			public void Add<T1, T2>(T2 obj) where T2 : notnull, T1 => objects[typeof(T1)] = obj;
 		}
 
 		[Test]

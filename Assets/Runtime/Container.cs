@@ -89,14 +89,14 @@ namespace Kryz.DI
 			return (T)Get(typeof(T))!;
 		}
 
-		public bool TryGet<T>(out T obj)
+		public bool TryGet<T>(out T? obj)
 		{
 			if (TryGet(typeof(T), out object? o))
 			{
-				obj = (T)o!;
+				obj = (T)o!; // We should assume this is NOT null here. If it is, something went horribly wrong.
 				return true;
 			}
-			obj = default!;
+			obj = default;
 			return false;
 		}
 
