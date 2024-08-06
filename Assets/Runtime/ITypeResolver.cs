@@ -8,6 +8,6 @@ namespace Kryz.DI
 		object Get(Type type);
 
 		bool TryGet<T>(out T obj);
-		bool TryGet(Type type, out object obj);
+		bool TryGet(Type type, out object? obj);
 	}
 }

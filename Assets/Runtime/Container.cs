@@ -8,10 +8,10 @@ namespace Kryz.DI
 		private readonly struct Registration
 		{
 			public readonly Type Type;
-			public readonly object Object;
+			public readonly object? Object;
 			public readonly bool Transient;
 
-			public Registration(Type type, object obj, bool transient = false)
+			public Registration(Type type, object? obj, bool transient = false)
 			{
 				Type = type;
 				Object = obj;
@@ -20,7 +20,7 @@ namespace Kryz.DI
 		}
 
 		public readonly Container Root;
-		public readonly Container Parent;
+		public readonly Container? Parent;
 		public readonly IReadOnlyList<Container> Children;
 
 		private readonly List<Container> children = new();
@@ -29,7 +29,7 @@ namespace Kryz.DI
 
 		public Container()
 		{
-			Root = null;
+			Root = this;
 			Parent = null;
 			Children = children;
 			reflectionInjector = new ReflectionInjector();
@@ -37,7 +37,7 @@ namespace Kryz.DI
 
 		private Container(Container parent, ReflectionInjector injector)
 		{
-			Root = parent.Root ?? parent;
+			Root = parent.Root;
 			Parent = parent;
 			Children = children;
 			reflectionInjector = injector;
@@ -57,16 +57,16 @@ namespace Kryz.DI
 
 		public object Get(Type type)
 		{
-			if (TryGet(type, out object obj))
+			if (TryGet(type, out object? obj))
 			{
-				return obj;
+				return obj!;
 			}
 			throw new InjectionException($"Failed to get registration for type {type.FullName}");
 		}
 
-		public bool TryGet(Type type, out object obj)
+		public bool TryGet(Type type, out object? obj)
 		{
-			Container container = this;
+			Container? container = this;
 			while (container != null)
 			{
 				if (container.objects.TryGetValue(type, out Registration registration))
@@ -86,21 +86,21 @@ namespace Kryz.DI
 
 		public T Get<T>()
 		{
-			return (T)Get(typeof(T));
+			return (T)Get(typeof(T))!;
 		}
 
 		public bool TryGet<T>(out T obj)
 		{
-			if (TryGet(typeof(T), out object o))
+			if (TryGet(typeof(T), out object? o))
 			{
-				obj = (T)o;
+				obj = (T)o!;
 				return true;
 			}
-			obj = default;
+			obj = default!;
 			return false;
 		}
 
-		public void Inject<T>(T obj)
+		public void Inject<T>(T obj) where T : notnull
 		{
 			reflectionInjector.Inject(typeof(T), obj, this);
 		}
@@ -119,13 +119,13 @@ namespace Kryz.DI
 			return AddScoped<TBase, TDerived>(lazy ? default : CreateAndInject<TDerived>());
 		}
 
-		public Container AddSingleton<TBase, TDerived>(TDerived obj) where TDerived : TBase
+		public Container AddSingleton<TBase, TDerived>(TDerived? obj) where TDerived : TBase
 		{
 			Root.objects[typeof(TBase)] = new Registration(typeof(TDerived), obj);
 			return this;
 		}
 
-		public Container AddScoped<TBase, TDerived>(TDerived obj) where TDerived : TBase
+		public Container AddScoped<TBase, TDerived>(TDerived? obj) where TDerived : TBase
 		{
 			objects[typeof(TBase)] = new Registration(typeof(TDerived), obj);
 			return this;

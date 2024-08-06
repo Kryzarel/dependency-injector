@@ -37,7 +37,7 @@ namespace Kryz.DI
 			{
 				return FormatterServices.GetUninitializedObject(type);
 			}
-			return null;
+			throw new InjectionException($"Can't create object of type {type.FullName} because it is abstract.");
 		}
 
 		public void Inject(Type type, object obj, ITypeResolver typeResolver)

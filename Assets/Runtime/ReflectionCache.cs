@@ -8,14 +8,14 @@ namespace Kryz.DI
 	{
 		public class InjectionInfo
 		{
-			public readonly ConstructorInfo Constructor;
+			public readonly ConstructorInfo? Constructor;
 			public readonly IReadOnlyList<Type> ConstructorParams;
 			public readonly IReadOnlyList<FieldInfo> Fields;
 			public readonly IReadOnlyList<PropertyInfo> Properties;
 			public readonly IReadOnlyList<MethodInfo> Methods;
 			public readonly IReadOnlyList<IReadOnlyList<Type>> MethodParams;
 
-			public InjectionInfo(ConstructorInfo constructor,
+			public InjectionInfo(ConstructorInfo? constructor,
 				IReadOnlyList<Type> constructorParams,
 				IReadOnlyList<FieldInfo> fields,
 				IReadOnlyList<PropertyInfo> properties,
@@ -53,7 +53,7 @@ namespace Kryz.DI
 
 		private InjectionInfo ProcessType(Type type)
 		{
-			ConstructorInfo constructor = GetInjectConstructor(type);
+			ConstructorInfo? constructor = GetInjectConstructor(type);
 			GetConstructorParamTypes(constructor, constructorParams);
 
 			GetMembersWithAttribute(type.GetFields(flags), injectAttribute, fields);
@@ -76,7 +76,7 @@ namespace Kryz.DI
 			return injectionInfo;
 		}
 
-		private static ConstructorInfo GetInjectConstructor(Type type)
+		private static ConstructorInfo? GetInjectConstructor(Type type)
 		{
 			ConstructorInfo[] constructors = type.GetConstructors(flags);
 
@@ -97,7 +97,7 @@ namespace Kryz.DI
 			return null;
 		}
 
-		private static void GetConstructorParamTypes(ConstructorInfo constructor, List<Type> constructorParams)
+		private static void GetConstructorParamTypes(ConstructorInfo? constructor, List<Type> constructorParams)
 		{
 			if (constructor != null)
 			{
