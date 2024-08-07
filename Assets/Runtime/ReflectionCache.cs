@@ -45,8 +45,7 @@ namespace Kryz.DI
 		{
 			if (!cache.TryGetValue(type, out InjectionInfo info))
 			{
-				info = ProcessType(type);
-				cache[type] = info;
+				cache[type] = info = ProcessType(type);
 			}
 			return info;
 		}
