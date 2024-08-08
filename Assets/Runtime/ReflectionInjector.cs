@@ -10,6 +10,7 @@ namespace Kryz.DI
 		private readonly ReflectionCache reflectionCache = new();
 		// If you have a method with 32 parameters or more, kindly reconsider.
 		private readonly object[][] paramCache = new object[32][];
+		private readonly HashSet<Type> circularDependencyTypes = new();
 
 		public ReflectionInjector()
 		{
@@ -69,6 +70,55 @@ namespace Kryz.DI
 				item.Invoke(obj, methodParams);
 				ReturnToParamCache(methodParams);
 			}
+		}
+
+		public bool HasCircularDependency(Type type)
+		{
+			bool result = HasCircularDependency(type, reflectionCache, circularDependencyTypes);
+			circularDependencyTypes.Clear();
+			return result;
+		}
+
+		private static bool HasCircularDependency(Type type, ReflectionCache cache, HashSet<Type> checkedTypes)
+		{
+			ReflectionCache.InjectionInfo info = cache.Get(type);
+			checkedTypes.Add(type);
+
+			if (HasCircularDependency(info.ConstructorParams, x => x, cache, checkedTypes))
+			{
+				return true;
+			}
+			if (HasCircularDependency(info.Fields, x => x.FieldType, cache, checkedTypes))
+			{
+				return true;
+			}
+			if (HasCircularDependency(info.Properties, x => x.PropertyType, cache, checkedTypes))
+			{
+				return true;
+			}
+			for (int i = 0; i < info.Methods.Count; i++)
+			{
+				if (HasCircularDependency(info.MethodParams[i], x => x, cache, checkedTypes))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, ReflectionCache cache, HashSet<Type> checkedTypes)
+		{
+			for (int i = 0; i < list.Count; i++)
+			{
+				Type type = getType(list[i]);
+				if (!checkedTypes.Add(type) || HasCircularDependency(type, cache, checkedTypes))
+				{
+					checkedTypes.Clear();
+					return true;
+				}
+				checkedTypes.Clear();
+			}
+			return false;
 		}
 
 		private object[] GetFromParamCache(int length)

@@ -101,5 +101,43 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(b, d.B);
 			Assert.AreEqual(c, d.C);
 		}
+
+		[Test]
+		public void TestCircularDependency()
+		{
+			ReflectionInjector reflectionInjector = new();
+
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IA)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IB)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IC)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ID)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IE)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IGeneric<IA, IB, IC>)));
+
+			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular1)));
+			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular2)));
+
+			// These don't have the [Inject] attribute, so the circular dependency won't be found
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular1NoInject)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular2NoInject)));
+
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(A)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(B)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(C)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(D)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(E)));
+			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(Generic<IA, IB, IC>)));
+
+			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1)));
+			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2)));
+
+			// These use the interfaces that don't have the [Inject] attribute, so the circular dependency won't be found
+			Assert.False(reflectionInjector.HasCircularDependency(typeof(Circular1NoInject)));
+			Assert.False(reflectionInjector.HasCircularDependency(typeof(Circular2NoInject)));
+
+			// These depend on the concrete class, so the circular dependency WILL be found
+			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete)));
+			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete)));
+		}
 	}
 }

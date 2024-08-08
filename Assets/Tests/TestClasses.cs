@@ -31,6 +31,25 @@ namespace Kryz.DI.Tests
 		void Inject123(T1 a, T2 b, T3 c);
 	}
 
+	public interface ICircular1
+	{
+		[Inject]
+		ICircular2 Circular { get; }
+	}
+	public interface ICircular2
+	{
+		[Inject]
+		ICircular1 Circular { get; }
+	}
+	public interface ICircular1NoInject
+	{
+		ICircular2NoInject Circular { get; }
+	}
+	public interface ICircular2NoInject
+	{
+		ICircular1NoInject Circular { get; }
+	}
+
 	public class A : IA
 	{
 	}
@@ -113,6 +132,78 @@ namespace Kryz.DI.Tests
 			A = a;
 			B = b;
 			C = c;
+		}
+	}
+
+	public class Circular1 : ICircular1
+	{
+		ICircular2 ICircular1.Circular => Circular;
+
+		public readonly ICircular2 Circular;
+
+		public Circular1(ICircular2 circular)
+		{
+			Circular = circular;
+		}
+	}
+
+	public class Circular2 : ICircular2
+	{
+		ICircular1 ICircular2.Circular => Circular;
+
+		public readonly ICircular1 Circular;
+
+		public Circular2(ICircular1 circular)
+		{
+			Circular = circular;
+		}
+	}
+
+	public class Circular1NoInject : ICircular1NoInject
+	{
+		ICircular2NoInject ICircular1NoInject.Circular => Circular;
+
+		public readonly ICircular2NoInject Circular;
+
+		public Circular1NoInject(ICircular2NoInject circular)
+		{
+			Circular = circular;
+		}
+	}
+
+	public class Circular2NoInject : ICircular2NoInject
+	{
+		ICircular1NoInject ICircular2NoInject.Circular => Circular;
+
+		public readonly ICircular1NoInject Circular;
+
+		public Circular2NoInject(ICircular1NoInject circular)
+		{
+			Circular = circular;
+		}
+	}
+
+	public class Circular1Concrete : ICircular1
+	{
+		ICircular2 ICircular1.Circular => Circular;
+
+		public readonly ICircular2 Circular;
+
+		public Circular1Concrete(Circular2Concrete circular)
+		{
+			Circular = circular;
+		}
+	}
+
+	public class Circular2Concrete : ICircular2
+	{
+		ICircular1 ICircular2.Circular => Circular;
+
+		public readonly ICircular1 Circular;
+
+		public Circular2Concrete(Circular1Concrete circular)
+		{
+			Circular = circular;
 		}
 	}
 }
