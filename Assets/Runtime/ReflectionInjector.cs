@@ -74,31 +74,23 @@ namespace Kryz.DI
 
 		public bool HasCircularDependency(Type type)
 		{
-			bool result = HasCircularDependency(type, reflectionCache, circularDependencyTypes);
-			circularDependencyTypes.Clear();
-			return result;
-		}
+			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
-		private static bool HasCircularDependency(Type type, ReflectionCache cache, HashSet<Type> checkedTypes)
-		{
-			ReflectionCache.InjectionInfo info = cache.Get(type);
-			checkedTypes.Add(type);
-
-			if (HasCircularDependency(info.ConstructorParams, x => x, cache, checkedTypes))
+			if (HasCircularDependency(info.ConstructorParams, x => x, type))
 			{
 				return true;
 			}
-			if (HasCircularDependency(info.Fields, x => x.FieldType, cache, checkedTypes))
+			if (HasCircularDependency(info.Fields, x => x.FieldType, type))
 			{
 				return true;
 			}
-			if (HasCircularDependency(info.Properties, x => x.PropertyType, cache, checkedTypes))
+			if (HasCircularDependency(info.Properties, x => x.PropertyType, type))
 			{
 				return true;
 			}
 			for (int i = 0; i < info.Methods.Count; i++)
 			{
-				if (HasCircularDependency(info.MethodParams[i], x => x, cache, checkedTypes))
+				if (HasCircularDependency(info.MethodParams[i], x => x, type))
 				{
 					return true;
 				}
@@ -106,17 +98,17 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private static bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, ReflectionCache cache, HashSet<Type> checkedTypes)
+		private bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, Type rootType)
 		{
 			for (int i = 0; i < list.Count; i++)
 			{
 				Type type = getType(list[i]);
-				if (!checkedTypes.Add(type) || HasCircularDependency(type, cache, checkedTypes))
+				if (type == rootType || !circularDependencyTypes.Add(type) || HasCircularDependency(type))
 				{
-					checkedTypes.Clear();
+					circularDependencyTypes.Clear();
 					return true;
 				}
-				checkedTypes.Clear();
+				circularDependencyTypes.Clear();
 			}
 			return false;
 		}
