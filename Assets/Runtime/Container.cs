@@ -54,28 +54,23 @@ namespace Kryz.DI
 			return children.Remove(child);
 		}
 
-		public object Get(Type type)
+		public T GetObject<T>()
 		{
-			if (TryGet(type, out object? obj))
+			return (T)GetObject(typeof(T))!;
+		}
+
+		public object GetObject(Type type)
+		{
+			if (TryGetObject(type, out object? obj))
 			{
 				return obj!;
 			}
 			throw new InjectionException($"Failed to get registration for type {type.FullName}");
 		}
 
-		public bool TryGet(Type type, out object? obj)
+		public bool TryGetObject<T>(out T? obj)
 		{
-			return TryGet(this, type, out obj);
-		}
-
-		public T Get<T>()
-		{
-			return (T)Get(typeof(T))!;
-		}
-
-		public bool TryGet<T>(out T? obj)
-		{
-			if (TryGet(typeof(T), out object? o))
+			if (TryGetObject(typeof(T), out object? o))
 			{
 				obj = (T)o!; // We should assume this is NOT null here. If it is, something went horribly wrong.
 				return true;
@@ -84,9 +79,39 @@ namespace Kryz.DI
 			return false;
 		}
 
-		public void Inject<T>(T obj) where T : notnull
+		public bool TryGetObject(Type type, out object? obj)
 		{
-			reflectionInjector.Inject(typeof(T), obj, this);
+			return TryGet(this, type, out obj);
+		}
+
+		public Type GetType<T>()
+		{
+			return GetType(typeof(T));
+		}
+
+		public bool TryGetType<T>(out Type? type)
+		{
+			return TryGetType(typeof(T), out type);
+		}
+
+		public Type GetType(Type type)
+		{
+			if (TryGetType(type, out Type? t))
+			{
+				return t!;
+			}
+			throw new InjectionException($"Failed to get registration for type {type.FullName}");
+		}
+
+		public bool TryGetType(Type type, out Type? resolvedType)
+		{
+			if (registrations.TryGetValue(type, out Registration registration))
+			{
+				resolvedType = registration.Type;
+				return true;
+			}
+			resolvedType = null;
+			return false;
 		}
 
 		public Container AddSingleton<T>(T obj) where T : notnull => AddSingleton<T, T>(obj);
@@ -126,8 +151,20 @@ namespace Kryz.DI
 		{
 			foreach (Type item in registrations.Keys)
 			{
-				TryGet(item, out _);
+				TryGetObject(item, out _);
 			}
+		}
+
+		public void Inject<T>(T obj) where T : notnull
+		{
+			reflectionInjector.Inject(typeof(T), obj, this);
+		}
+
+		private object CreateAndInject(Type type)
+		{
+			object obj = reflectionInjector.CreateObject(type, this);
+			reflectionInjector.Inject(type, obj, this);
+			return obj;
 		}
 
 		private static bool TryGet(Container? container, Type type, out object? obj)
@@ -160,13 +197,6 @@ namespace Kryz.DI
 			}
 			obj = null;
 			return false;
-		}
-
-		private object CreateAndInject(Type type)
-		{
-			object obj = reflectionInjector.CreateObject(type, this);
-			reflectionInjector.Inject(type, obj, this);
-			return obj;
 		}
 	}
 }

@@ -28,7 +28,7 @@ namespace Kryz.DI
 				for (int i = 0; i < paramLength; i++)
 				{
 					Type item = info.ConstructorParams[i];
-					constructorParams[i] = typeResolver.Get(item);
+					constructorParams[i] = typeResolver.GetObject(item);
 				}
 				object obj = info.Constructor.Invoke(constructorParams);
 				ReturnToParamCache(constructorParams);
@@ -48,13 +48,13 @@ namespace Kryz.DI
 			for (int i = 0; i < info.Fields.Count; i++)
 			{
 				FieldInfo item = info.Fields[i];
-				item.SetValue(obj, typeResolver.Get(item.FieldType));
+				item.SetValue(obj, typeResolver.GetObject(item.FieldType));
 			}
 
 			for (int i = 0; i < info.Properties.Count; i++)
 			{
 				PropertyInfo item = info.Properties[i];
-				item.SetValue(obj, typeResolver.Get(item.PropertyType));
+				item.SetValue(obj, typeResolver.GetObject(item.PropertyType));
 			}
 
 			for (int i = 0; i < info.Methods.Count; i++)
@@ -65,32 +65,32 @@ namespace Kryz.DI
 				object[] methodParams = GetFromParamCache(paramTypes.Count);
 				for (int j = 0; j < methodParams.Length; j++)
 				{
-					methodParams[j] = typeResolver.Get(paramTypes[j]);
+					methodParams[j] = typeResolver.GetObject(paramTypes[j]);
 				}
 				item.Invoke(obj, methodParams);
 				ReturnToParamCache(methodParams);
 			}
 		}
 
-		public bool HasCircularDependency(Type type)
+		public bool HasCircularDependency(Type type, ITypeResolver typeResolver)
 		{
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
-			if (HasCircularDependency(info.ConstructorParams, x => x, type))
+			if (HasCircularDependency(info.ConstructorParams, x => x, type, typeResolver))
 			{
 				return true;
 			}
-			if (HasCircularDependency(info.Fields, x => x.FieldType, type))
+			if (HasCircularDependency(info.Fields, x => x.FieldType, type, typeResolver))
 			{
 				return true;
 			}
-			if (HasCircularDependency(info.Properties, x => x.PropertyType, type))
+			if (HasCircularDependency(info.Properties, x => x.PropertyType, type, typeResolver))
 			{
 				return true;
 			}
 			for (int i = 0; i < info.Methods.Count; i++)
 			{
-				if (HasCircularDependency(info.MethodParams[i], x => x, type))
+				if (HasCircularDependency(info.MethodParams[i], x => x, type, typeResolver))
 				{
 					return true;
 				}
@@ -98,12 +98,13 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, Type rootType)
+		private bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, Type rootType, ITypeResolver typeResolver)
 		{
 			for (int i = 0; i < list.Count; i++)
 			{
-				Type type = getType(list[i]);
-				if (type == rootType || !circularDependencyTypes.Add(type) || HasCircularDependency(type))
+				Type t = getType(list[i]);
+				Type type = typeResolver.TryGetType(t, out Type? resolvedType) ? resolvedType! : t;
+				if (type == rootType || !circularDependencyTypes.Add(type) || HasCircularDependency(type, typeResolver))
 				{
 					circularDependencyTypes.Clear();
 					return true;
