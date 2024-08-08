@@ -122,16 +122,16 @@ namespace Kryz.DI.Tests
 
 	public class Generic<T1, T2, T3> : IGeneric<T1, T2, T3>
 	{
-		public T1? A;
-		public T2? B;
-		public T3? C;
+		public T1? One;
+		public T2? Two;
+		public T3? Three;
 
 		[Inject]
-		public void Inject123(T1 a, T2 b, T3 c)
+		public void Inject123(T1 one, T2 two, T3 three)
 		{
-			A = a;
-			B = b;
-			C = c;
+			One = one;
+			Two = two;
+			Three = three;
 		}
 	}
 
