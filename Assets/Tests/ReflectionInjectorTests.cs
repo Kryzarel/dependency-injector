@@ -64,6 +64,10 @@ namespace Kryz.DI.Tests
 			typeResolver.Add<IE, E>(e);
 
 			Empty empty = (Empty)reflectionInjector.CreateObject(typeof(Empty), typeResolver);
+			typeResolver.Add<Empty, Empty>(empty);
+
+			Generic<IA, IB, IC> generic = (Generic<IA, IB, IC>)reflectionInjector.CreateObject(typeof(Generic<IA, IB, IC>), typeResolver);
+			Generic<ID, IE, Empty> generic2 = (Generic<ID, IE, Empty>)reflectionInjector.CreateObject(typeof(Generic<ID, IE, Empty>), typeResolver);
 
 			Assert.AreEqual(a, b.A);
 
@@ -80,6 +84,14 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(null, e.D);
 
 			Assert.AreNotEqual(null, empty);
+
+			Assert.AreEqual(null, generic.One);
+			Assert.AreEqual(null, generic.Two);
+			Assert.AreEqual(null, generic.Three);
+
+			Assert.AreEqual(null, generic2.One);
+			Assert.AreEqual(null, generic2.Two);
+			Assert.AreEqual(null, generic2.Three);
 		}
 
 		[Test]
@@ -115,6 +127,13 @@ namespace Kryz.DI.Tests
 
 			Empty empty = (Empty)reflectionInjector.CreateObject(typeof(Empty), typeResolver);
 			reflectionInjector.Inject(typeof(Empty), empty, typeResolver);
+			typeResolver.Add<Empty, Empty>(empty);
+
+			Generic<IA, IB, IC> generic = (Generic<IA, IB, IC>)reflectionInjector.CreateObject(typeof(Generic<IA, IB, IC>), typeResolver);
+			reflectionInjector.Inject(typeof(Generic<IA, IB, IC>), generic, typeResolver);
+
+			Generic<ID, IE, Empty> generic2 = (Generic<ID, IE, Empty>)reflectionInjector.CreateObject(typeof(Generic<ID, IE, Empty>), typeResolver);
+			reflectionInjector.Inject(typeof(Generic<ID, IE, Empty>), generic2, typeResolver);
 
 			Assert.AreEqual(a, b.A);
 
@@ -131,6 +150,14 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(d, e.D);
 
 			Assert.AreNotEqual(null, empty);
+
+			Assert.AreEqual(a, generic.One);
+			Assert.AreEqual(b, generic.Two);
+			Assert.AreEqual(c, generic.Three);
+
+			Assert.AreEqual(d, generic2.One);
+			Assert.AreEqual(e, generic2.Two);
+			Assert.AreEqual(empty, generic2.Three);
 		}
 
 		[Test]
