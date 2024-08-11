@@ -3,6 +3,7 @@
 
 # But not these files/folders...
 !.gitignore
+!Directory.Build.props
 !/Assets/
 !/Assets/**
 !/ProjectSettings/
