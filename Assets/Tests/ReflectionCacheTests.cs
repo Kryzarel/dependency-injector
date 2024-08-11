@@ -104,7 +104,7 @@ namespace Kryz.DI.Tests
 				numMethods: 0);
 
 			Assert.AreEqual(typeof(B).GetConstructors()[0], info.Constructor);
-			Assert.AreEqual(typeof(A), info.ConstructorParams[0]);
+			Assert.AreEqual(typeof(IA), info.ConstructorParams[0]);
 		}
 
 		[Test]
@@ -119,7 +119,7 @@ namespace Kryz.DI.Tests
 
 			Assert.AreEqual(typeof(C).GetConstructors().Single(x => x.IsDefined(typeof(InjectAttribute))), info.Constructor);
 			Assert.AreEqual(typeof(IA), info.ConstructorParams[0]);
-			Assert.AreEqual(typeof(B), info.ConstructorParams[1]);
+			Assert.AreEqual(typeof(IB), info.ConstructorParams[1]);
 		}
 
 		[Test]

@@ -56,9 +56,9 @@ namespace Kryz.DI.Tests
 
 	public class B : IB
 	{
-		public readonly A A;
+		public readonly IA A;
 
-		public B(A a)
+		public B(IA a)
 		{
 			A = a;
 		}
@@ -67,7 +67,7 @@ namespace Kryz.DI.Tests
 	public class C : IC
 	{
 		public readonly IA? A;
-		public readonly B? B;
+		public readonly IB? B;
 
 		IA? IC.A => A;
 
@@ -76,7 +76,7 @@ namespace Kryz.DI.Tests
 		}
 
 		[Inject]
-		public C(IA a, B b)
+		public C(IA a, IB b)
 		{
 			A = a;
 			B = b;
