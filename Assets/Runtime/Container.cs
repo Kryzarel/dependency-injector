@@ -42,7 +42,7 @@ namespace Kryz.DI
 			reflectionInjector = injector;
 		}
 
-		public Container AddChild()
+		public Container CreateChild()
 		{
 			Container child = new(this, reflectionInjector);
 			children.Add(child);
@@ -149,9 +149,12 @@ namespace Kryz.DI
 
 		public void Instantiate()
 		{
-			foreach (Type item in registrations.Keys)
+			foreach (KeyValuePair<Type, Registration> item in registrations)
 			{
-				TryGetObject(item, out _);
+				if (!item.Value.Transient)
+				{
+					TryGetObject(item.Key, out _);
+				}
 			}
 		}
 
