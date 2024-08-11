@@ -19,6 +19,11 @@ namespace Kryz.DI
 
 		public object CreateObject(Type type, ITypeResolver typeResolver)
 		{
+			if (HasCircularDependency(type, typeResolver, out Type? circType))
+			{
+				throw new InjectionException($"Can't create object of type {type.FullName} because {circType?.FullName} has a circular dependency on it.");
+			}
+
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
 			if (info.Constructor != null)
@@ -74,23 +79,28 @@ namespace Kryz.DI
 
 		public bool HasCircularDependency(Type type, ITypeResolver typeResolver)
 		{
+			return HasCircularDependency(type, typeResolver, out _);
+		}
+
+		public bool HasCircularDependency(Type type, ITypeResolver typeResolver, out Type? circType)
+		{
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
-			if (HasCircularDependency(info.ConstructorParams, x => x, type, typeResolver))
+			if (HasCircularDependency(info.ConstructorParams, x => x, type, typeResolver, out circType))
 			{
 				return true;
 			}
-			if (HasCircularDependency(info.Fields, x => x.FieldType, type, typeResolver))
+			if (HasCircularDependency(info.Fields, x => x.FieldType, type, typeResolver, out circType))
 			{
 				return true;
 			}
-			if (HasCircularDependency(info.Properties, x => x.PropertyType, type, typeResolver))
+			if (HasCircularDependency(info.Properties, x => x.PropertyType, type, typeResolver, out circType))
 			{
 				return true;
 			}
 			for (int i = 0; i < info.Methods.Count; i++)
 			{
-				if (HasCircularDependency(info.MethodParams[i], x => x, type, typeResolver))
+				if (HasCircularDependency(info.MethodParams[i], x => x, type, typeResolver, out circType))
 				{
 					return true;
 				}
@@ -98,15 +108,18 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, Type rootType, ITypeResolver typeResolver)
+		private bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, Type rootType, ITypeResolver typeResolver, out Type? circType)
 		{
+			circType = null;
+
 			for (int i = 0; i < list.Count; i++)
 			{
 				Type t = getType(list[i]);
 				Type type = typeResolver.TryGetType(t, out Type? resolvedType) ? resolvedType! : t;
-				if (type == rootType || !circularDependencyTypes.Add(type) || HasCircularDependency(type, typeResolver))
+				if (type == rootType || !circularDependencyTypes.Add(type) || HasCircularDependency(type, typeResolver, out circType))
 				{
 					circularDependencyTypes.Clear();
+					circType ??= type;
 					return true;
 				}
 				circularDependencyTypes.Clear();
