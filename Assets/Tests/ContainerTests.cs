@@ -5,19 +5,24 @@ namespace Kryz.DI.Tests
 {
 	public class ContainerTests
 	{
+		private static void GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2)
+		{
+			root = new Container();
+
+			child1 = root.CreateChild();
+			child2 = root.CreateChild();
+
+			child1_child1 = child1.CreateChild();
+			child1_child2 = child1.CreateChild();
+
+			child2_child1 = child2.CreateChild();
+			child2_child2 = child2.CreateChild();
+		}
+
 		[Test]
 		public void TestRoot()
 		{
-			Container root = new();
-
-			Container child1 = root.CreateChild();
-			Container child2 = root.CreateChild();
-
-			Container child1_child1 = child1.CreateChild();
-			Container child1_child2 = child1.CreateChild();
-
-			Container child2_child1 = child2.CreateChild();
-			Container child2_child2 = child2.CreateChild();
+			GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2);
 
 			Assert.AreEqual(root, root.Root);
 
@@ -34,16 +39,7 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestParent()
 		{
-			Container root = new();
-
-			Container child1 = root.CreateChild();
-			Container child2 = root.CreateChild();
-
-			Container child1_child1 = child1.CreateChild();
-			Container child1_child2 = child1.CreateChild();
-
-			Container child2_child1 = child2.CreateChild();
-			Container child2_child2 = child2.CreateChild();
+			GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2);
 
 			Assert.AreEqual(root, child1.Parent);
 			Assert.AreEqual(root, child2.Parent);
@@ -58,16 +54,7 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestChildren()
 		{
-			Container root = new();
-
-			Container child1 = root.CreateChild();
-			Container child2 = root.CreateChild();
-
-			Container child1_child1 = child1.CreateChild();
-			Container child1_child2 = child1.CreateChild();
-
-			Container child2_child1 = child2.CreateChild();
-			Container child2_child2 = child2.CreateChild();
+			GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2);
 
 			Assert.AreEqual(root.Children[0], child1);
 			Assert.AreEqual(root.Children[1], child2);
@@ -79,12 +66,10 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(child2.Children[1], child2_child2);
 		}
 
-		[Test]
-		public void TestRegistrations()
+		private static Container GetSingletonContainer()
 		{
-			Container container = new();
-
-			container.AddSingleton<Empty, Empty>()
+			return new Container()
+				.AddSingleton<Empty, Empty>()
 				.AddSingleton<IA, A>()
 				.AddSingleton<IB, B>()
 				.AddSingleton<IC, C>()
@@ -96,7 +81,27 @@ namespace Kryz.DI.Tests
 				.AddSingleton<ICircular2, Circular2>()
 				.AddSingleton<ICircular1NoInject, Circular1NoInject>()
 				.AddSingleton<ICircular2NoInject, Circular2NoInject>();
+		}
 
+		private static Container GetScopedContainer()
+		{
+			return new Container()
+				.AddScoped<Empty, Empty>()
+				.AddScoped<IA, A>()
+				.AddScoped<IB, B>()
+				.AddScoped<IC, C>()
+				.AddScoped<ID, D>()
+				.AddScoped<IE, E>()
+				.AddScoped<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>()
+				.AddScoped<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>()
+				.AddScoped<ICircular1, Circular1>()
+				.AddScoped<ICircular2, Circular2>()
+				.AddScoped<ICircular1NoInject, Circular1NoInject>()
+				.AddScoped<ICircular2NoInject, Circular2NoInject>();
+		}
+
+		private static void TestRegistrations(Container container)
+		{
 			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
 			Assert.AreEqual(typeof(A), container.GetType<IA>());
 			Assert.AreEqual(typeof(B), container.GetType<IB>());
@@ -110,35 +115,11 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(typeof(Circular1NoInject), container.GetType<ICircular1NoInject>());
 			Assert.AreEqual(typeof(Circular2NoInject), container.GetType<ICircular2NoInject>());
 
-			try
-			{
-				container.GetType<A>();
-				Assert.Fail();
-			}
-			catch (InjectionException)
-			{
-				Assert.Pass();
-			}
+			Assert.Throws<InjectionException>(() => container.GetObject<A>());
 		}
 
-		[Test]
-		public void TestObjects()
+		private static void TestObjects(Container container)
 		{
-			Container container = new();
-
-			container.AddSingleton<Empty, Empty>()
-				.AddSingleton<IA, A>()
-				.AddSingleton<IB, B>()
-				.AddSingleton<IC, C>()
-				.AddSingleton<ID, D>()
-				.AddSingleton<IE, E>()
-				.AddSingleton<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>()
-				.AddSingleton<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>()
-				.AddSingleton<ICircular1, Circular1>()
-				.AddSingleton<ICircular2, Circular2>()
-				.AddSingleton<ICircular1NoInject, Circular1NoInject>()
-				.AddSingleton<ICircular2NoInject, Circular2NoInject>();
-
 			Assert.IsTrue(container.GetObject<IA>() is A);
 			Assert.IsTrue(container.GetObject<IB>() is B);
 			Assert.IsTrue(container.GetObject<IC>() is C);
@@ -156,45 +137,34 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(container.GetObject<IC>(), e.C);
 			Assert.AreEqual(container.GetObject<ID>(), e.D);
 
-			try
-			{
-				container.GetObject<ICircular1>();
-				Assert.Fail();
-			}
-			catch (InjectionException)
-			{
-				Assert.Pass();
-			}
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1>());
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2>());
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1NoInject>());
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2NoInject>());
+		}
 
-			try
-			{
-				container.GetObject<ICircular2>();
-				Assert.Fail();
-			}
-			catch (InjectionException)
-			{
-				Assert.Pass();
-			}
+		[Test]
+		public void TestSingletonRegistrations()
+		{
+			TestRegistrations(GetSingletonContainer());
+		}
 
-			try
-			{
-				container.GetObject<ICircular1NoInject>();
-				Assert.Fail();
-			}
-			catch (InjectionException)
-			{
-				Assert.Pass();
-			}
+		[Test]
+		public void TestSingletonObjects()
+		{
+			TestObjects(GetSingletonContainer());
+		}
 
-			try
-			{
-				container.GetObject<ICircular2NoInject>();
-				Assert.Fail();
-			}
-			catch (InjectionException)
-			{
-				Assert.Pass();
-			}
+		[Test]
+		public void TestScopedRegistrations()
+		{
+			TestRegistrations(GetScopedContainer());
+		}
+
+		[Test]
+		public void TestScopedObjects()
+		{
+			TestObjects(GetScopedContainer());
 		}
 	}
 }
