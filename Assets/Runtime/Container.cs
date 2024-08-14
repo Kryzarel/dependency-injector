@@ -65,7 +65,7 @@ namespace Kryz.DI
 			{
 				return obj!;
 			}
-			throw new InjectionException($"Failed to get registration for type {type.FullName}");
+			throw new InjectionException($"No object for type {type.FullName} has been registered.");
 		}
 
 		public bool TryGetObject<T>(out T? obj)
@@ -100,7 +100,7 @@ namespace Kryz.DI
 			{
 				return t!;
 			}
-			throw new InjectionException($"Failed to get registration for type {type.FullName}");
+			throw new InjectionException($"Type {type.FullName} has not been registered.");
 		}
 
 		public bool TryGetType(Type type, out Type? resolvedType)

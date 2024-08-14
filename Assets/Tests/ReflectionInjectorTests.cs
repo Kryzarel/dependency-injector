@@ -224,15 +224,7 @@ namespace Kryz.DI.Tests
 			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete), typeResolver));
 			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete), typeResolver));
 
-			try
-			{
-				reflectionInjector.CreateObject(typeof(ICircular1), typeResolver);
-				Assert.Fail();
-			}
-			catch (InjectionException)
-			{
-				Assert.Pass();
-			}
+			Assert.Throws<CircularDependencyException>(() => reflectionInjector.CreateObject(typeof(ICircular1), typeResolver));
 		}
 
 		[Test]

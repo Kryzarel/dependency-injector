@@ -21,7 +21,7 @@ namespace Kryz.DI
 		{
 			if (HasCircularDependency(type, typeResolver, out Type? circType))
 			{
-				throw new InjectionException($"Can't create object of type {type.FullName} because {circType?.FullName} has a circular dependency on it.");
+				throw new CircularDependencyException($"Can't create object of type {type.FullName} because {circType?.FullName} has a circular dependency on it.");
 			}
 
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
@@ -43,7 +43,7 @@ namespace Kryz.DI
 			{
 				return FormatterServices.GetUninitializedObject(type);
 			}
-			throw new InjectionException($"Can't create object of type {type.FullName} because it is abstract.");
+			throw new AbstractTypeException($"Can't create object of type {type.FullName} because it is abstract.");
 		}
 
 		public void Inject(Type type, object obj, ITypeResolver typeResolver)

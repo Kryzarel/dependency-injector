@@ -136,10 +136,10 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(container.GetObject<IC>(), e.C);
 			Assert.AreEqual(container.GetObject<ID>(), e.D);
 
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1>());
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2>());
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1NoInject>());
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2NoInject>());
+			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular1>());
+			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular2>());
+			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular1NoInject>());
+			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular2NoInject>());
 		}
 
 		[Test]
