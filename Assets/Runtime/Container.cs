@@ -81,7 +81,7 @@ namespace Kryz.DI
 
 		public bool TryGetObject(Type type, out object? obj)
 		{
-			return TryGet(this, type, out obj);
+			return TryGetObject_Internal(this, type, out obj);
 		}
 
 		public Type GetType<T>()
@@ -105,13 +105,7 @@ namespace Kryz.DI
 
 		public bool TryGetType(Type type, out Type? resolvedType)
 		{
-			if (registrations.TryGetValue(type, out Registration registration))
-			{
-				resolvedType = registration.Type;
-				return true;
-			}
-			resolvedType = null;
-			return false;
+			return TryGetType_Internal(this, type, out resolvedType);
 		}
 
 		public Container AddSingleton<T>(T obj) where T : notnull => AddSingleton<T, T>(obj);
@@ -170,11 +164,26 @@ namespace Kryz.DI
 			return obj;
 		}
 
-		private static bool TryGet(Container? container, Type type, out object? obj)
+		private static bool TryGetType_Internal(Container? container, Type type, out Type? resolvedType)
 		{
 			while (container != null)
 			{
-				if (container.TryGet_Internal(type, out obj))
+				if (container.registrations.TryGetValue(type, out Registration registration))
+				{
+					resolvedType = registration.Type;
+					return true;
+				}
+				container = container.Parent;
+			}
+			resolvedType = null;
+			return false;
+		}
+
+		private static bool TryGetObject_Internal(Container? container, Type type, out object? obj)
+		{
+			while (container != null)
+			{
+				if (container.TryGetObject_Internal(type, out obj))
 				{
 					return true;
 				}
@@ -184,7 +193,7 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private bool TryGet_Internal(Type type, out object? obj)
+		private bool TryGetObject_Internal(Type type, out object? obj)
 		{
 			if (registrations.TryGetValue(type, out Registration registration))
 			{
