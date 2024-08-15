@@ -1,9 +1,12 @@
+using System;
 using NUnit.Framework;
 
 namespace Kryz.DI.Tests
 {
 	public class ContainerTests
 	{
+		private enum RegisterType { Singleton, Scoped, Transient }
+
 		private static void GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2)
 		{
 			root = new Container();
@@ -65,38 +68,32 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(child2.Children[1], child2_child2);
 		}
 
-		private static Container SetupSingleton(Container container)
+		private static Container Add<TBase, TDerived>(Container container, RegisterType registerType) where TDerived : TBase
 		{
-			return container
-				.AddSingleton<Empty, Empty>()
-				.AddSingleton<IA, A>()
-				.AddSingleton<IB, B>()
-				.AddSingleton<IC, C>()
-				.AddSingleton<ID, D>()
-				.AddSingleton<IE, E>()
-				.AddSingleton<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>()
-				.AddSingleton<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>()
-				.AddSingleton<ICircular1, Circular1>()
-				.AddSingleton<ICircular2, Circular2>()
-				.AddSingleton<ICircular1NoInject, Circular1NoInject>()
-				.AddSingleton<ICircular2NoInject, Circular2NoInject>();
+			return registerType switch
+			{
+				RegisterType.Singleton => container.AddSingleton<TBase, TDerived>(),
+				RegisterType.Scoped => container.AddScoped<TBase, TDerived>(),
+				RegisterType.Transient => container.AddTransient<TBase, TDerived>(),
+				_ => throw new NotImplementedException(),
+			};
 		}
 
-		private static Container SetupScoped(Container container)
+		private static Container SetupContainer(Container container, RegisterType registerType)
 		{
-			return container
-				.AddScoped<Empty, Empty>()
-				.AddScoped<IA, A>()
-				.AddScoped<IB, B>()
-				.AddScoped<IC, C>()
-				.AddScoped<ID, D>()
-				.AddScoped<IE, E>()
-				.AddScoped<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>()
-				.AddScoped<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>()
-				.AddScoped<ICircular1, Circular1>()
-				.AddScoped<ICircular2, Circular2>()
-				.AddScoped<ICircular1NoInject, Circular1NoInject>()
-				.AddScoped<ICircular2NoInject, Circular2NoInject>();
+			Add<Empty, Empty>(container, registerType);
+			Add<IA, A>(container, registerType);
+			Add<IB, B>(container, registerType);
+			Add<IC, C>(container, registerType);
+			Add<ID, D>(container, registerType);
+			Add<IE, E>(container, registerType);
+			Add<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>(container, registerType);
+			Add<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>(container, registerType);
+			Add<ICircular1, Circular1>(container, registerType);
+			Add<ICircular2, Circular2>(container, registerType);
+			Add<ICircular1NoInject, Circular1NoInject>(container, registerType);
+			Add<ICircular2NoInject, Circular2NoInject>(container, registerType);
+			return container;
 		}
 
 		private static void HasRegistrations(Container container)
@@ -145,15 +142,6 @@ namespace Kryz.DI.Tests
 			Assert.IsTrue(container.GetObject<IGeneric<IA, IB, IC>>() is Generic<IA, IB, IC>);
 			Assert.IsTrue(container.GetObject<IGeneric<ID, IE, Empty>>() is Generic<ID, IE, Empty>);
 
-			Assert.AreEqual(container.GetObject<IA>(), container.GetObject<IC>().A);
-			Assert.AreEqual(container.GetObject<IB>(), container.GetObject<ID>().B);
-
-			E e = (E)container.GetObject<IE>();
-			Assert.AreEqual(container.GetObject<IA>(), e.A);
-			Assert.AreEqual(container.GetObject<IB>(), e.B);
-			Assert.AreEqual(container.GetObject<IC>(), e.C);
-			Assert.AreEqual(container.GetObject<ID>(), e.D);
-
 			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular1>());
 			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular2>());
 			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular1NoInject>());
@@ -176,6 +164,28 @@ namespace Kryz.DI.Tests
 			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2NoInject>());
 		}
 
+		private static void TestObjectEquality(Container container, bool areEqual)
+		{
+			Action<object?, object?> assertEquality = areEqual ? Assert.AreEqual : Assert.AreNotEqual;
+
+			assertEquality(container.GetObject<IA>(), container.GetObject<IA>());
+			assertEquality(container.GetObject<IB>(), container.GetObject<IB>());
+			assertEquality(container.GetObject<IC>(), container.GetObject<IC>());
+			assertEquality(container.GetObject<ID>(), container.GetObject<ID>());
+			assertEquality(container.GetObject<IE>(), container.GetObject<IE>());
+			assertEquality(container.GetObject<IGeneric<IA, IB, IC>>(), container.GetObject<IGeneric<IA, IB, IC>>());
+			assertEquality(container.GetObject<IGeneric<ID, IE, Empty>>(), container.GetObject<IGeneric<ID, IE, Empty>>());
+
+			assertEquality(container.GetObject<IA>(), container.GetObject<IC>().A);
+			assertEquality(container.GetObject<IB>(), container.GetObject<ID>().B);
+
+			E e = (E)container.GetObject<IE>();
+			assertEquality(container.GetObject<IA>(), e.A);
+			assertEquality(container.GetObject<IB>(), e.B);
+			assertEquality(container.GetObject<IC>(), e.C);
+			assertEquality(container.GetObject<ID>(), e.D);
+		}
+
 		[Test]
 		public void TestSingleton()
 		{
@@ -184,10 +194,11 @@ namespace Kryz.DI.Tests
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
 
-			SetupSingleton(root);
+			SetupContainer(root, RegisterType.Singleton);
 
 			HasRegistrations(root);
 			HasObjects(root);
+			TestObjectEquality(root, areEqual: true);
 		}
 
 		[Test]
@@ -198,10 +209,26 @@ namespace Kryz.DI.Tests
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
 
-			SetupScoped(root);
+			SetupContainer(root, RegisterType.Scoped);
 
 			HasRegistrations(root);
 			HasObjects(root);
+			TestObjectEquality(root, areEqual: true);
+		}
+
+		[Test]
+		public void TestTransient()
+		{
+			Container root = new();
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			SetupContainer(root, RegisterType.Transient);
+
+			HasRegistrations(root);
+			HasObjects(root);
+			TestObjectEquality(root, areEqual: false);
 		}
 
 		[Test]
@@ -216,13 +243,15 @@ namespace Kryz.DI.Tests
 			DoesNotHaveRegistrations(child);
 			DoesNotHaveObjects(child);
 
-			SetupSingleton(child);
+			SetupContainer(child, RegisterType.Singleton);
 
 			HasRegistrations(root);
 			HasObjects(root);
+			TestObjectEquality(root, areEqual: true);
 
 			HasRegistrations(child);
 			HasObjects(child);
+			TestObjectEquality(child, areEqual: true);
 		}
 
 		[Test]
@@ -237,13 +266,36 @@ namespace Kryz.DI.Tests
 			DoesNotHaveRegistrations(child);
 			DoesNotHaveObjects(child);
 
-			SetupScoped(child);
+			SetupContainer(child, RegisterType.Scoped);
 
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
 
 			HasRegistrations(child);
 			HasObjects(child);
+			TestObjectEquality(child, areEqual: true);
+		}
+
+		[Test]
+		public void TestTransientChild()
+		{
+			Container root = new();
+			Container child = root.CreateChild();
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			DoesNotHaveRegistrations(child);
+			DoesNotHaveObjects(child);
+
+			SetupContainer(child, RegisterType.Transient);
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			HasRegistrations(child);
+			HasObjects(child);
+			TestObjectEquality(child, areEqual: false);
 		}
 	}
 }
