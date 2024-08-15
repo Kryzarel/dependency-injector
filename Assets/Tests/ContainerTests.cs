@@ -65,9 +65,9 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(child2.Children[1], child2_child2);
 		}
 
-		private static Container GetSingletonContainer()
+		private static Container SetupSingleton(Container container)
 		{
-			return new Container()
+			return container
 				.AddSingleton<Empty, Empty>()
 				.AddSingleton<IA, A>()
 				.AddSingleton<IB, B>()
@@ -82,9 +82,9 @@ namespace Kryz.DI.Tests
 				.AddSingleton<ICircular2NoInject, Circular2NoInject>();
 		}
 
-		private static Container GetScopedContainer()
+		private static Container SetupScoped(Container container)
 		{
-			return new Container()
+			return container
 				.AddScoped<Empty, Empty>()
 				.AddScoped<IA, A>()
 				.AddScoped<IB, B>()
@@ -99,7 +99,7 @@ namespace Kryz.DI.Tests
 				.AddScoped<ICircular2NoInject, Circular2NoInject>();
 		}
 
-		private static void TestRegistrations(Container container)
+		private static void HasRegistrations(Container container)
 		{
 			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
 			Assert.AreEqual(typeof(A), container.GetType<IA>());
@@ -117,7 +117,25 @@ namespace Kryz.DI.Tests
 			Assert.Throws<InjectionException>(() => container.GetObject<A>());
 		}
 
-		private static void TestObjects(Container container)
+		private static void DoesNotHaveRegistrations(Container container)
+		{
+			Assert.IsFalse(container.TryGetType<Empty>(out _));
+			Assert.IsFalse(container.TryGetType<IA>(out _));
+			Assert.IsFalse(container.TryGetType<IB>(out _));
+			Assert.IsFalse(container.TryGetType<IC>(out _));
+			Assert.IsFalse(container.TryGetType<ID>(out _));
+			Assert.IsFalse(container.TryGetType<IE>(out _));
+			Assert.IsFalse(container.TryGetType<IGeneric<IA, IB, IC>>(out _));
+			Assert.IsFalse(container.TryGetType<IGeneric<ID, IE, Empty>>(out _));
+			Assert.IsFalse(container.TryGetType<ICircular1>(out _));
+			Assert.IsFalse(container.TryGetType<ICircular2>(out _));
+			Assert.IsFalse(container.TryGetType<ICircular1NoInject>(out _));
+			Assert.IsFalse(container.TryGetType<ICircular2NoInject>(out _));
+
+			Assert.Throws<InjectionException>(() => container.GetObject<A>());
+		}
+
+		private static void HasObjects(Container container)
 		{
 			Assert.IsTrue(container.GetObject<IA>() is A);
 			Assert.IsTrue(container.GetObject<IB>() is B);
@@ -142,28 +160,90 @@ namespace Kryz.DI.Tests
 			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular2NoInject>());
 		}
 
-		[Test]
-		public void TestSingletonRegistrations()
+		private static void DoesNotHaveObjects(Container container)
 		{
-			TestRegistrations(GetSingletonContainer());
+			Assert.IsFalse(container.TryGetObject<IA>(out _));
+			Assert.IsFalse(container.TryGetObject<IB>(out _));
+			Assert.IsFalse(container.TryGetObject<IC>(out _));
+			Assert.IsFalse(container.TryGetObject<ID>(out _));
+			Assert.IsFalse(container.TryGetObject<IE>(out _));
+			Assert.IsFalse(container.TryGetObject<IGeneric<IA, IB, IC>>(out _));
+			Assert.IsFalse(container.TryGetObject<IGeneric<ID, IE, Empty>>(out _));
+
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1>());
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2>());
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1NoInject>());
+			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2NoInject>());
 		}
 
 		[Test]
-		public void TestSingletonObjects()
+		public void TestSingleton()
 		{
-			TestObjects(GetSingletonContainer());
+			Container root = new();
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			SetupSingleton(root);
+
+			HasRegistrations(root);
+			HasObjects(root);
 		}
 
 		[Test]
-		public void TestScopedRegistrations()
+		public void TestScoped()
 		{
-			TestRegistrations(GetScopedContainer());
+			Container root = new();
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			SetupScoped(root);
+
+			HasRegistrations(root);
+			HasObjects(root);
 		}
 
 		[Test]
-		public void TestScopedObjects()
+		public void TestSingletonChild()
 		{
-			TestObjects(GetScopedContainer());
+			Container root = new();
+			Container child = root.CreateChild();
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			DoesNotHaveRegistrations(child);
+			DoesNotHaveObjects(child);
+
+			SetupSingleton(child);
+
+			HasRegistrations(root);
+			HasObjects(root);
+
+			HasRegistrations(child);
+			HasObjects(child);
+		}
+
+		[Test]
+		public void TestScopedChild()
+		{
+			Container root = new();
+			Container child = root.CreateChild();
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			DoesNotHaveRegistrations(child);
+			DoesNotHaveObjects(child);
+
+			SetupScoped(child);
+
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
+
+			HasRegistrations(child);
+			HasObjects(child);
 		}
 	}
 }
