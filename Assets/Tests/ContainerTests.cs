@@ -297,5 +297,90 @@ namespace Kryz.DI.Tests
 			HasObjects(child);
 			TestObjectEquality(child, areEqual: false);
 		}
+
+		[Test]
+		public void TestAddObject()
+		{
+			Container root = new();
+
+			Assert.IsFalse(root.TryGetType<Empty>(out _));
+			Assert.IsFalse(root.TryGetObject<Empty>(out _));
+			Assert.Throws<InjectionException>(() => root.GetType<Empty>());
+			Assert.Throws<InjectionException>(() => root.GetObject<Empty>());
+
+			Empty empty = new();
+			root.AddScoped(empty);
+
+			Assert.IsTrue(root.TryGetType<Empty>(out _));
+			Assert.IsTrue(root.TryGetObject<Empty>(out _));
+			Assert.AreEqual(typeof(Empty), root.GetType<Empty>());
+			Assert.AreEqual(empty, root.GetObject<Empty>());
+		}
+
+		[Test]
+		public void TestInject()
+		{
+			Container root = new();
+			Container child = root.CreateChild();
+
+			SetupContainer(child, RegisterType.Scoped);
+
+			{
+				Generic<IA, IB, IC> generic = new();
+				Assert.Throws<InjectionException>(() => root.Inject(generic));
+				child.Inject(generic);
+				Assert.AreEqual(child.GetObject<IA>(), generic.One);
+				Assert.AreEqual(child.GetObject<IB>(), generic.Two);
+				Assert.AreEqual(child.GetObject<IC>(), generic.Three);
+			}
+
+			SetupContainer(child, RegisterType.Singleton);
+
+			{
+				Generic<IA, IB, IC> generic = new();
+				root.Inject(generic);
+				Assert.AreEqual(root.GetObject<IA>(), generic.One);
+				Assert.AreEqual(root.GetObject<IB>(), generic.Two);
+				Assert.AreEqual(root.GetObject<IC>(), generic.Three);
+			}
+		}
+
+		private class InstanceCounter
+		{
+			public static int Count;
+			public InstanceCounter() { Count++; }
+			~InstanceCounter() { Count--; }
+		}
+
+		[Test]
+		public void TestInstantiate()
+		{
+			Container root = new();
+			Container child = root.CreateChild();
+			Container child2 = child.CreateChild();
+
+			root.AddScoped<InstanceCounter, InstanceCounter>();
+			child.AddScoped<InstanceCounter, InstanceCounter>();
+			child2.AddTransient<InstanceCounter, InstanceCounter>();
+
+			int startingCount = InstanceCounter.Count;
+
+			root.Instantiate();
+			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
+			Assert.IsTrue(root.TryGetObject<InstanceCounter>(out _));
+			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
+
+			child.Instantiate();
+			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
+			Assert.IsTrue(child.TryGetObject<InstanceCounter>(out _));
+			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
+
+			child2.Instantiate();
+			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
+			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
+			Assert.AreEqual(startingCount + 3, InstanceCounter.Count);
+			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
+			Assert.AreEqual(startingCount + 4, InstanceCounter.Count);
+		}
 	}
 }
