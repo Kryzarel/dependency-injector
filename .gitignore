@@ -1,6 +1,3 @@
-# Ignore all these files no matter the folder
-Thumbs.db
-Thumbs.db.meta
-.DS_Store
-.vscode/
+Thumbs.db*
+.DS_Store*
 .vscode*
