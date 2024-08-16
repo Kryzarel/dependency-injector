@@ -1,5 +1,5 @@
 {
-    "name": "Tests",
+    "name": "Kryz.DI.Tests",
     "rootNamespace": "Kryz.DI.Tests",
     "references": [
         "UnityEngine.TestRunner",
