@@ -135,6 +135,22 @@ namespace Kryz.DI.Tests
 		}
 	}
 
+	public class ProtectedSubClassInject<T> : BaseClass<T>
+	{
+		protected override void Inject(T arg1)
+		{
+			Value = arg1;
+		}
+	}
+
+	public abstract class BaseClass<T>
+	{
+		public T? Value { get; protected set; }
+
+		[Inject]
+		protected abstract void Inject(T arg1);
+	}
+
 	public class Circular1 : ICircular1
 	{
 		ICircular2 ICircular1.Circular => Circular;

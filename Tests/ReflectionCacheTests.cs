@@ -243,6 +243,19 @@ namespace Kryz.DI.Tests
 			Assert.IsTrue(info.Methods.Contains(typeof(IGeneric<IA, IB, IC>).GetMethod(nameof(IGeneric<IA, IB, IC>.Inject123))));
 		}
 
+		[Test]
+		public void TestInfoProtectedSubClassInject()
+		{
+			ReflectionCache.InjectionInfo info = TestTypeInfo<ProtectedSubClassInject<IA>>(
+				hasConstructor: true,
+				numConstructorParams: 0,
+				numFields: 0,
+				numProperties: 0,
+				numMethods: 1);
+
+			Assert.IsTrue(info.Methods.Contains(typeof(ProtectedSubClassInject<IA>).GetMethod("Inject")));
+		}
+
 		private static ReflectionCache.InjectionInfo TestTypeInfo<T>(bool hasConstructor, int numConstructorParams, int numFields, int numProperties, int numMethods)
 		{
 			Type type = typeof(T);

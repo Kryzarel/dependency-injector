@@ -31,7 +31,7 @@ namespace Kryz.DI
 			}
 		}
 
-		private const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+		private const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
 		private static readonly Type injectAttribute = typeof(InjectAttribute);
 
@@ -55,9 +55,9 @@ namespace Kryz.DI
 			ConstructorInfo? constructor = GetInjectConstructor(type);
 			GetConstructorParamTypes(constructor, constructorParams);
 
-			GetMembersWithAttribute(type.GetFields(flags), injectAttribute, fields);
-			GetMembersWithAttribute(type.GetProperties(flags), injectAttribute, properties);
-			GetMembersWithAttribute(type.GetMethods(flags), injectAttribute, methods);
+			type.GetAllFieldsWithAttribute(flags, injectAttribute, fields);
+			type.GetAllPropertiesWithAttribute(flags, injectAttribute, properties);
+			type.GetAllMethodsWithAttribute(flags, injectAttribute, methods);
 
 			InjectionInfo injectionInfo = new(
 				constructor,
@@ -127,17 +127,6 @@ namespace Kryz.DI
 				}
 			}
 			return methodParams;
-		}
-
-		private static void GetMembersWithAttribute<T>(IReadOnlyList<T> members, Type attribute, List<T> results) where T : MemberInfo
-		{
-			foreach (T item in members)
-			{
-				if (item.IsDefined(attribute))
-				{
-					results.Add(item);
-				}
-			}
 		}
 
 		private static T[] GetArray<T>(List<T> list)
