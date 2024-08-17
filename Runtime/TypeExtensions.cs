@@ -12,10 +12,12 @@ namespace Kryz.DI
 		/// </summary>
 		public static void GetAllFields(this Type type, BindingFlags bindingFlags, List<FieldInfo> fieldInfos)
 		{
+			// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
+			bindingFlags |= BindingFlags.DeclaredOnly;
+
 			do
 			{
-				// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
-				fieldInfos.AddRangeNonAlloc(type.GetFields(bindingFlags | BindingFlags.DeclaredOnly));
+				fieldInfos.AddRangeNonAlloc(type.GetFields(bindingFlags));
 				type = type.BaseType;
 			}
 			while (type != null);
@@ -27,10 +29,12 @@ namespace Kryz.DI
 		/// </summary>
 		public static void GetAllProperties(this Type type, BindingFlags bindingFlags, List<PropertyInfo> propertyInfos)
 		{
+			// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
+			bindingFlags |= BindingFlags.DeclaredOnly;
+
 			do
 			{
-				// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
-				propertyInfos.AddRangeNonAlloc(type.GetProperties(bindingFlags | BindingFlags.DeclaredOnly));
+				propertyInfos.AddRangeWhere(type.GetProperties(bindingFlags), item => !item.Exists(propertyInfos));
 				type = type.BaseType;
 			}
 			while (type != null);
@@ -42,10 +46,12 @@ namespace Kryz.DI
 		/// </summary>
 		public static void GetAllMethods(this Type type, BindingFlags bindingFlags, List<MethodInfo> methodInfos)
 		{
+			// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
+			bindingFlags |= BindingFlags.DeclaredOnly;
+
 			do
 			{
-				// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
-				methodInfos.AddRangeNonAlloc(type.GetMethods(bindingFlags | BindingFlags.DeclaredOnly));
+				methodInfos.AddRangeWhere(type.GetMethods(bindingFlags), item => !item.Exists(methodInfos));
 				type = type.BaseType;
 			}
 			while (type != null);
@@ -57,10 +63,12 @@ namespace Kryz.DI
 		/// </summary>
 		public static void GetAllFieldsWithAttribute(this Type type, BindingFlags bindingFlags, Type attributeType, List<FieldInfo> fieldInfos)
 		{
+			// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
+			bindingFlags |= BindingFlags.DeclaredOnly;
+
 			do
 			{
-				// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
-				fieldInfos.AddRangeWhere(type.GetFields(bindingFlags | BindingFlags.DeclaredOnly), item => item.IsDefined(attributeType));
+				fieldInfos.AddRangeWhere(type.GetFields(bindingFlags), item => item.IsDefined(attributeType));
 				type = type.BaseType;
 			}
 			while (type != null);
@@ -72,10 +80,12 @@ namespace Kryz.DI
 		/// </summary>
 		public static void GetAllPropertiesWithAttribute(this Type type, BindingFlags bindingFlags, Type attributeType, List<PropertyInfo> propertyInfos)
 		{
+			// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
+			bindingFlags |= BindingFlags.DeclaredOnly;
+
 			do
 			{
-				// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
-				propertyInfos.AddRangeWhere(type.GetProperties(bindingFlags | BindingFlags.DeclaredOnly), item => item.IsDefined(attributeType));
+				propertyInfos.AddRangeWhere(type.GetProperties(bindingFlags), item => item.IsDefined(attributeType) && !item.Exists(propertyInfos));
 				type = type.BaseType;
 			}
 			while (type != null);
@@ -87,13 +97,47 @@ namespace Kryz.DI
 		/// </summary>
 		public static void GetAllMethodsWithAttribute(this Type type, BindingFlags bindingFlags, Type attributeType, List<MethodInfo> methodInfos)
 		{
+			// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
+			bindingFlags |= BindingFlags.DeclaredOnly;
+
 			do
 			{
-				// Use BindingFlags.DeclaredOnly to prevent including duplicate fields from base/derived classes
-				methodInfos.AddRangeWhere(type.GetMethods(bindingFlags | BindingFlags.DeclaredOnly), item => item.IsDefined(attributeType));
+				methodInfos.AddRangeWhere(type.GetMethods(bindingFlags), item => item.IsDefined(attributeType) && !item.Exists(methodInfos));
 				type = type.BaseType;
 			}
 			while (type != null);
+		}
+
+		private static bool Exists(this MethodInfo method, List<MethodInfo> infos)
+		{
+			MethodInfo methodBase = method.GetBaseDefinition();
+			foreach (MethodInfo item in infos)
+			{
+				MethodInfo itemBase = item.GetBaseDefinition();
+				if (method == item || method == itemBase || methodBase == itemBase)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static bool Exists(this PropertyInfo property, List<PropertyInfo> infos)
+		{
+			MethodInfo? propertyGetterBase = property.GetMethod?.GetBaseDefinition();
+			MethodInfo? propertySetterBase = property.SetMethod?.GetBaseDefinition();
+			foreach (PropertyInfo item in infos)
+			{
+				MethodInfo? itemGetterBase = item.GetMethod?.GetBaseDefinition();
+				MethodInfo? itemSetterBase = item.SetMethod?.GetBaseDefinition();
+				if (property == item
+					|| itemGetterBase != null && (itemGetterBase == property.GetMethod || itemGetterBase == propertyGetterBase)
+					|| itemSetterBase != null && (itemSetterBase == property.SetMethod || itemSetterBase == propertySetterBase))
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }

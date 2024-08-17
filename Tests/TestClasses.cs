@@ -137,6 +137,10 @@ namespace Kryz.DI.Tests
 
 	public class ProtectedSubClassInject<T> : BaseClass<T>
 	{
+		public override T? Value { get; protected set; }
+		public override T? Value2 => Value;
+		public override T? Value3 => Value;
+
 		protected override void Inject(T arg1)
 		{
 			Value = arg1;
@@ -145,7 +149,12 @@ namespace Kryz.DI.Tests
 
 	public abstract class BaseClass<T>
 	{
-		public T? Value { get; protected set; }
+		[Inject]
+		public abstract T? Value { get; protected set; }
+		[Inject]
+		public abstract T? Value2 { get; }
+		[Inject]
+		public abstract T? Value3 { get; }
 
 		[Inject]
 		protected abstract void Inject(T arg1);

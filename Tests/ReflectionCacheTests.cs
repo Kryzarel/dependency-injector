@@ -250,10 +250,11 @@ namespace Kryz.DI.Tests
 				hasConstructor: true,
 				numConstructorParams: 0,
 				numFields: 0,
-				numProperties: 0,
+				numProperties: 3,
 				numMethods: 1);
 
-			Assert.IsTrue(info.Methods.Contains(typeof(ProtectedSubClassInject<IA>).GetMethod("Inject")));
+			const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+			Assert.IsTrue(info.Methods.Contains(typeof(ProtectedSubClassInject<IA>).GetMethod("Inject", flags)));
 		}
 
 		private static ReflectionCache.InjectionInfo TestTypeInfo<T>(bool hasConstructor, int numConstructorParams, int numFields, int numProperties, int numMethods)
