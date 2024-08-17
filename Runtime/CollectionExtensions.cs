@@ -10,7 +10,8 @@ namespace Kryz.DI
 			int currentCapacity = list.Capacity;
 			if (capacity > currentCapacity)
 			{
-				list.Capacity = Math.Max(capacity, currentCapacity * 2);
+				int newCapacity = (int)Math.Min(int.MaxValue, (uint)currentCapacity * 2);
+				list.Capacity = Math.Max(capacity, newCapacity);
 			}
 		}
 
