@@ -161,13 +161,13 @@ namespace Kryz.DI
 
 		public void Inject<T>(T obj) where T : notnull
 		{
-			reflectionInjector.Inject(typeof(T), obj, this);
+			reflectionInjector.Inject(obj, this);
 		}
 
 		private object CreateAndInject(Type type)
 		{
 			object obj = reflectionInjector.CreateObject(type, this);
-			reflectionInjector.Inject(type, obj, this);
+			reflectionInjector.Inject(obj, this);
 			return obj;
 		}
 

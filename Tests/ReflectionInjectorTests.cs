@@ -37,37 +37,51 @@ namespace Kryz.DI.Tests
 			public void Add<T1, T2>() where T2 : T1 => registrations[typeof(T1)] = typeof(T2);
 		}
 
+		private static void Create(TypeResolver typeResolver, ReflectionInjector reflectionInjector, bool inject, out A a, out B b, out C c, out D d, out E e, out Empty empty, out Generic<IA, IB, IC> generic, out Generic<ID, IE, Empty> generic2)
+		{
+			a = (A)reflectionInjector.CreateObject(typeof(A), typeResolver);
+			if (inject) reflectionInjector.Inject(a, typeResolver);
+			typeResolver.Add<A, A>(a);
+			typeResolver.Add<IA, A>(a);
+
+			b = (B)reflectionInjector.CreateObject(typeof(B), typeResolver);
+			if (inject) reflectionInjector.Inject(b, typeResolver);
+			typeResolver.Add<B, B>(b);
+			typeResolver.Add<IB, B>(b);
+
+			c = (C)reflectionInjector.CreateObject(typeof(C), typeResolver);
+			if (inject) reflectionInjector.Inject(c, typeResolver);
+			typeResolver.Add<C, C>(c);
+			typeResolver.Add<IC, C>(c);
+
+			d = (D)reflectionInjector.CreateObject(typeof(D), typeResolver);
+			if (inject) reflectionInjector.Inject(d, typeResolver);
+			typeResolver.Add<D, D>(d);
+			typeResolver.Add<ID, D>(d);
+
+			e = (E)reflectionInjector.CreateObject(typeof(E), typeResolver);
+			if (inject) reflectionInjector.Inject(e, typeResolver);
+			typeResolver.Add<E, E>(e);
+			typeResolver.Add<IE, E>(e);
+
+			empty = (Empty)reflectionInjector.CreateObject(typeof(Empty), typeResolver);
+			if (inject) reflectionInjector.Inject(empty, typeResolver);
+			typeResolver.Add<Empty, Empty>(empty);
+
+			generic = (Generic<IA, IB, IC>)reflectionInjector.CreateObject(typeof(Generic<IA, IB, IC>), typeResolver);
+			if (inject) reflectionInjector.Inject(generic, typeResolver);
+
+			generic2 = (Generic<ID, IE, Empty>)reflectionInjector.CreateObject(typeof(Generic<ID, IE, Empty>), typeResolver);
+			if (inject) reflectionInjector.Inject(generic2, typeResolver);
+		}
+
 		[Test]
 		public void TestCreate()
 		{
 			TypeResolver typeResolver = new();
 			ReflectionInjector reflectionInjector = new();
 
-			A a = (A)reflectionInjector.CreateObject(typeof(A), typeResolver);
-			typeResolver.Add<A, A>(a);
-			typeResolver.Add<IA, A>(a);
-
-			B b = (B)reflectionInjector.CreateObject(typeof(B), typeResolver);
-			typeResolver.Add<B, B>(b);
-			typeResolver.Add<IB, B>(b);
-
-			C c = (C)reflectionInjector.CreateObject(typeof(C), typeResolver);
-			typeResolver.Add<C, C>(c);
-			typeResolver.Add<IC, C>(c);
-
-			D d = (D)reflectionInjector.CreateObject(typeof(D), typeResolver);
-			typeResolver.Add<D, D>(d);
-			typeResolver.Add<ID, D>(d);
-
-			E e = (E)reflectionInjector.CreateObject(typeof(E), typeResolver);
-			typeResolver.Add<E, E>(e);
-			typeResolver.Add<IE, E>(e);
-
-			Empty empty = (Empty)reflectionInjector.CreateObject(typeof(Empty), typeResolver);
-			typeResolver.Add<Empty, Empty>(empty);
-
-			Generic<IA, IB, IC> generic = (Generic<IA, IB, IC>)reflectionInjector.CreateObject(typeof(Generic<IA, IB, IC>), typeResolver);
-			Generic<ID, IE, Empty> generic2 = (Generic<ID, IE, Empty>)reflectionInjector.CreateObject(typeof(Generic<ID, IE, Empty>), typeResolver);
+			Create(typeResolver, reflectionInjector, inject: false, out A a, out B b, out C c, out D d, out E e, out Empty empty, out Generic<IA, IB, IC> generic, out Generic<ID, IE, Empty> generic2);
 
 			Assert.AreEqual(a, b.A);
 
@@ -100,40 +114,7 @@ namespace Kryz.DI.Tests
 			TypeResolver typeResolver = new();
 			ReflectionInjector reflectionInjector = new();
 
-			A a = (A)reflectionInjector.CreateObject(typeof(A), typeResolver);
-			reflectionInjector.Inject(typeof(A), a, typeResolver);
-			typeResolver.Add<A, A>(a);
-			typeResolver.Add<IA, A>(a);
-
-			B b = (B)reflectionInjector.CreateObject(typeof(B), typeResolver);
-			reflectionInjector.Inject(typeof(B), b, typeResolver);
-			typeResolver.Add<B, B>(b);
-			typeResolver.Add<IB, B>(b);
-
-			C c = (C)reflectionInjector.CreateObject(typeof(C), typeResolver);
-			reflectionInjector.Inject(typeof(C), c, typeResolver);
-			typeResolver.Add<C, C>(c);
-			typeResolver.Add<IC, C>(c);
-
-			D d = (D)reflectionInjector.CreateObject(typeof(D), typeResolver);
-			reflectionInjector.Inject(typeof(D), d, typeResolver);
-			typeResolver.Add<D, D>(d);
-			typeResolver.Add<ID, D>(d);
-
-			E e = (E)reflectionInjector.CreateObject(typeof(E), typeResolver);
-			reflectionInjector.Inject(typeof(E), e, typeResolver);
-			typeResolver.Add<E, E>(e);
-			typeResolver.Add<IE, E>(e);
-
-			Empty empty = (Empty)reflectionInjector.CreateObject(typeof(Empty), typeResolver);
-			reflectionInjector.Inject(typeof(Empty), empty, typeResolver);
-			typeResolver.Add<Empty, Empty>(empty);
-
-			Generic<IA, IB, IC> generic = (Generic<IA, IB, IC>)reflectionInjector.CreateObject(typeof(Generic<IA, IB, IC>), typeResolver);
-			reflectionInjector.Inject(typeof(Generic<IA, IB, IC>), generic, typeResolver);
-
-			Generic<ID, IE, Empty> generic2 = (Generic<ID, IE, Empty>)reflectionInjector.CreateObject(typeof(Generic<ID, IE, Empty>), typeResolver);
-			reflectionInjector.Inject(typeof(Generic<ID, IE, Empty>), generic2, typeResolver);
+			Create(typeResolver, reflectionInjector, inject: true, out A a, out B b, out C c, out D d, out E e, out Empty empty, out Generic<IA, IB, IC> generic, out Generic<ID, IE, Empty> generic2);
 
 			Assert.AreEqual(a, b.A);
 
@@ -158,6 +139,27 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(d, generic2.One);
 			Assert.AreEqual(e, generic2.Two);
 			Assert.AreEqual(empty, generic2.Three);
+		}
+
+		[Test]
+		public void TestProtectedSubClassInject()
+		{
+			TypeResolver typeResolver = new();
+			ReflectionInjector reflectionInjector = new();
+
+			Create(typeResolver, reflectionInjector, inject: true, out A a, out B b, out C c, out D d, out E e, out Empty empty, out Generic<IA, IB, IC> generic, out Generic<ID, IE, Empty> generic2);
+
+			{
+				ProtectedSubClassInject<IA> subClass = new();
+				reflectionInjector.Inject(subClass, typeResolver);
+				Assert.AreEqual(a, subClass.Value);
+			}
+
+			{
+				BaseClass<IA> subClassCastToBase = new ProtectedSubClassInject<IA>();
+				reflectionInjector.Inject(subClassCastToBase, typeResolver);
+				Assert.AreEqual(a, subClassCastToBase.Value);
+			}
 		}
 
 		[Test]

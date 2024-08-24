@@ -46,8 +46,9 @@ namespace Kryz.DI
 			throw new AbstractTypeException($"Can't create object of type {type.FullName} because it is abstract.");
 		}
 
-		public void Inject(Type type, object obj, ITypeResolver typeResolver)
+		public void Inject(object obj, ITypeResolver typeResolver)
 		{
+			Type type = obj.GetType();
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
 			for (int i = 0; i < info.Fields.Count; i++)
