@@ -42,6 +42,13 @@ namespace Kryz.DI
 			reflectionInjector = injector;
 		}
 
+		public void Clear()
+		{
+			children.Clear();
+			objects.Clear();
+			registrations.Clear();
+		}
+
 		public Container CreateChild()
 		{
 			Container child = new(this, reflectionInjector);
