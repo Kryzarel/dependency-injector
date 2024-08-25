@@ -34,12 +34,13 @@ namespace Kryz.DI
 			reflectionInjector = new ReflectionInjector();
 		}
 
-		private Container(Container parent, ReflectionInjector injector)
+		private Container(Container parent)
 		{
 			Root = parent.Root;
 			Parent = parent;
 			Children = children;
-			reflectionInjector = injector;
+			reflectionInjector = parent.reflectionInjector;
+			parent.children.Add(this);
 		}
 
 		public void Clear()
@@ -51,9 +52,7 @@ namespace Kryz.DI
 
 		public Container CreateChild()
 		{
-			Container child = new(this, reflectionInjector);
-			children.Add(child);
-			return child;
+			return new Container(this);
 		}
 
 		public bool RemoveChild(Container child)
