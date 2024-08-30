@@ -77,10 +77,6 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(typeof(E), container.GetType<IE>());
 			Assert.AreEqual(typeof(Generic<IA, IB, IC>), container.GetType<IGeneric<IA, IB, IC>>());
 			Assert.AreEqual(typeof(Generic<ID, IE, Empty>), container.GetType<IGeneric<ID, IE, Empty>>());
-			Assert.AreEqual(typeof(Circular1), container.GetType<ICircular1>());
-			Assert.AreEqual(typeof(Circular2), container.GetType<ICircular2>());
-			Assert.AreEqual(typeof(Circular1NoInject), container.GetType<ICircular1NoInject>());
-			Assert.AreEqual(typeof(Circular2NoInject), container.GetType<ICircular2NoInject>());
 
 			Assert.Throws<InjectionException>(() => container.GetObject<A>());
 		}
@@ -112,11 +108,6 @@ namespace Kryz.DI.Tests
 			Assert.IsTrue(container.GetObject<IE>() is E);
 			Assert.IsTrue(container.GetObject<IGeneric<IA, IB, IC>>() is Generic<IA, IB, IC>);
 			Assert.IsTrue(container.GetObject<IGeneric<ID, IE, Empty>>() is Generic<ID, IE, Empty>);
-
-			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular1>());
-			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular2>());
-			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular1NoInject>());
-			Assert.Throws<CircularDependencyException>(() => container.GetObject<ICircular2NoInject>());
 		}
 
 		private static void DoesNotHaveObjects(Container container)
@@ -155,6 +146,42 @@ namespace Kryz.DI.Tests
 			assertEquality(container.GetObject<IB>(), e.B);
 			assertEquality(container.GetObject<IC>(), e.C);
 			assertEquality(container.GetObject<ID>(), e.D);
+		}
+
+		[Test]
+		public void TestRegistrations()
+		{
+			Container container = new();
+
+			container.AddScoped<Empty, Empty>();
+			container.AddScoped<IA, A>();
+			container.AddScoped<IB, B>();
+			container.AddScoped<IC, C>();
+			container.AddScoped<ID, D>();
+			container.AddScoped<IE, E>();
+			container.AddScoped<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>();
+			container.AddScoped<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>();
+
+			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
+			Assert.AreEqual(typeof(A), container.GetType<IA>());
+			Assert.AreEqual(typeof(B), container.GetType<IB>());
+			Assert.AreEqual(typeof(C), container.GetType<IC>());
+			Assert.AreEqual(typeof(D), container.GetType<ID>());
+			Assert.AreEqual(typeof(E), container.GetType<IE>());
+			Assert.AreEqual(typeof(Generic<IA, IB, IC>), container.GetType<IGeneric<IA, IB, IC>>());
+			Assert.AreEqual(typeof(Generic<ID, IE, Empty>), container.GetType<IGeneric<ID, IE, Empty>>());
+
+			Assert.Throws<CircularDependencyException>(() => container.AddScoped<ICircular1, Circular1>());
+			Assert.Throws<CircularDependencyException>(() => container.AddScoped<ICircular2, Circular2>());
+
+			// This one will still be added because it's only possible to detect the circular dependency when 'ICircular2NoInject' is registered
+			container.AddScoped<ICircular1NoInject, Circular1NoInject>();
+			Assert.AreEqual(typeof(Circular1NoInject), container.GetType<ICircular1NoInject>());
+
+			Assert.Throws<CircularDependencyException>(() => container.AddScoped<ICircular2NoInject, Circular2NoInject>());
+
+			Container child = container.CreateChild();
+			Assert.Throws<CircularDependencyException>(() => child.AddScoped<ICircular2NoInject, Circular2NoInject>());
 		}
 
 		[Test]

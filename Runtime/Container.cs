@@ -125,7 +125,12 @@ namespace Kryz.DI
 
 		public Container AddScoped<TBase, TDerived>() where TDerived : TBase
 		{
-			registrations[typeof(TBase)] = new Registration(typeof(TDerived));
+			Type type = typeof(TDerived);
+			registrations[typeof(TBase)] = new Registration(type);
+			if (reflectionInjector.HasCircularDependency(type, this, out Type? circType))
+			{
+				throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
+			}
 			return this;
 		}
 
@@ -136,6 +141,7 @@ namespace Kryz.DI
 
 		public Container AddScoped<TBase, TDerived>(TDerived obj) where TDerived : notnull, TBase
 		{
+			// No need to check circular dependencies here because we already have the instantiated object
 			objects[typeof(TDerived)] = obj;
 			registrations[typeof(TBase)] = new Registration(typeof(TDerived));
 			return this;
@@ -143,7 +149,12 @@ namespace Kryz.DI
 
 		public Container AddTransient<TBase, TDerived>() where TDerived : TBase
 		{
-			registrations[typeof(TBase)] = new Registration(typeof(TDerived), true);
+			Type type = typeof(TDerived);
+			registrations[typeof(TBase)] = new Registration(type, true);
+			if (reflectionInjector.HasCircularDependency(type, this, out Type? circType))
+			{
+				throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
+			}
 			return this;
 		}
 

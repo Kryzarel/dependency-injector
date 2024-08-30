@@ -168,31 +168,14 @@ namespace Kryz.DI.Tests
 			TypeResolver typeResolver = new();
 			ReflectionInjector reflectionInjector = new();
 
-			typeResolver.Add<A, A>();
 			typeResolver.Add<IA, A>();
-
-			typeResolver.Add<B, B>();
 			typeResolver.Add<IB, B>();
-
-			typeResolver.Add<C, C>();
 			typeResolver.Add<IC, C>();
-
-			typeResolver.Add<D, D>();
 			typeResolver.Add<ID, D>();
-
-			typeResolver.Add<E, E>();
 			typeResolver.Add<IE, E>();
-
-			typeResolver.Add<Circular1, Circular1>();
 			typeResolver.Add<ICircular1, Circular1>();
-
-			typeResolver.Add<Circular2, Circular2>();
 			typeResolver.Add<ICircular2, Circular2>();
-
-			typeResolver.Add<Circular1NoInject, Circular1NoInject>();
 			typeResolver.Add<ICircular1NoInject, Circular1NoInject>();
-
-			typeResolver.Add<Circular2NoInject, Circular2NoInject>();
 			typeResolver.Add<ICircular2NoInject, Circular2NoInject>();
 
 			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IA), typeResolver));
@@ -225,8 +208,6 @@ namespace Kryz.DI.Tests
 
 			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete), typeResolver));
 			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete), typeResolver));
-
-			Assert.Throws<CircularDependencyException>(() => reflectionInjector.CreateObject(typeof(ICircular1), typeResolver));
 		}
 
 		[Test]

@@ -5,6 +5,10 @@ using System.Runtime.Serialization;
 
 namespace Kryz.DI
 {
+	/// <summary>
+	/// <para>This class should handle everything that requires reflection in the dependency injection framework.</para>
+	/// <para>No other class in this assembly, other than <see cref="ReflectionCache"/>, should use the <see cref="System.Reflection"/> namespace.</para>
+	/// </summary>
 	public class ReflectionInjector
 	{
 		private readonly ReflectionCache reflectionCache = new();
@@ -19,11 +23,6 @@ namespace Kryz.DI
 
 		public object CreateObject(Type type, ITypeResolver typeResolver)
 		{
-			if (HasCircularDependency(type, typeResolver, out Type? circType))
-			{
-				throw new CircularDependencyException($"Can't create object of type {type.FullName} because {circType?.FullName} has a circular dependency on it.");
-			}
-
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
 			if (info.Constructor != null)
@@ -86,45 +85,27 @@ namespace Kryz.DI
 		public bool HasCircularDependency(Type type, ITypeResolver typeResolver, out Type? circType)
 		{
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
+			circularDependencyTypes.Add(type);
 
-			if (HasCircularDependency(info.ConstructorParams, x => x, type, typeResolver, out circType))
+			foreach (Type dependency in new DependenciesEnumerable(info))
 			{
-				return true;
-			}
-			if (HasCircularDependency(info.Fields, x => x.FieldType, type, typeResolver, out circType))
-			{
-				return true;
-			}
-			if (HasCircularDependency(info.Properties, x => x.PropertyType, type, typeResolver, out circType))
-			{
-				return true;
-			}
-			for (int i = 0; i < info.Methods.Count; i++)
-			{
-				if (HasCircularDependency(info.MethodParams[i], x => x, type, typeResolver, out circType))
-				{
-					return true;
-				}
-			}
-			return false;
-		}
-
-		private bool HasCircularDependency<T>(IReadOnlyList<T> list, Func<T, Type> getType, Type rootType, ITypeResolver typeResolver, out Type? circType)
-		{
-			circType = null;
-
-			for (int i = 0; i < list.Count; i++)
-			{
-				Type t = getType(list[i]);
-				Type type = typeResolver.TryGetType(t, out Type? resolvedType) ? resolvedType! : t;
-				if (type == rootType || !circularDependencyTypes.Add(type) || HasCircularDependency(type, typeResolver, out circType))
+				if (!circularDependencyTypes.Add(dependency))
 				{
 					circularDependencyTypes.Clear();
-					circType ??= type;
+					circType = dependency;
 					return true;
 				}
-				circularDependencyTypes.Clear();
+
+				Type recurseType = typeResolver.TryGetType(dependency, out Type? t) ? t! : dependency;
+				if (HasCircularDependency(recurseType, typeResolver, out circType))
+				{
+					circularDependencyTypes.Clear();
+					return true;
+				}
 			}
+
+			circularDependencyTypes.Clear();
+			circType = null;
 			return false;
 		}
 
@@ -139,6 +120,69 @@ namespace Kryz.DI
 			if (length < paramCache.Length)
 			{
 				Array.Clear(parameters, 0, length);
+			}
+		}
+
+		private readonly struct DependenciesEnumerable
+		{
+			private readonly ReflectionCache.InjectionInfo info;
+			public DependenciesEnumerable(ReflectionCache.InjectionInfo info) => this.info = info;
+			public DependenciesEnumerator GetEnumerator() => new(info);
+		}
+
+		private struct DependenciesEnumerator
+		{
+			private readonly ReflectionCache.InjectionInfo info;
+
+			private Type current;
+			private int constructorParamIndex;
+			private int fieldIndex;
+			private int propertyIndex;
+			private int methodIndex;
+			private int methodParamsIndex;
+
+			public readonly Type Current => current;
+
+			public DependenciesEnumerator(ReflectionCache.InjectionInfo info)
+			{
+				this.info = info;
+				current = null!;
+
+				constructorParamIndex = 0;
+				fieldIndex = 0;
+				propertyIndex = 0;
+				methodIndex = 0;
+				methodParamsIndex = 0;
+			}
+
+			public bool MoveNext()
+			{
+				while (constructorParamIndex < info.ConstructorParams.Count)
+				{
+					current = info.ConstructorParams[constructorParamIndex++];
+					return true;
+				}
+				while (fieldIndex < info.Fields.Count)
+				{
+					current = info.Fields[fieldIndex++].FieldType;
+					return true;
+				}
+				while (propertyIndex < info.Properties.Count)
+				{
+					current = info.Properties[propertyIndex++].PropertyType;
+					return true;
+				}
+				while (methodIndex < info.MethodParams.Count)
+				{
+					while (methodParamsIndex < info.MethodParams[methodIndex].Count)
+					{
+						current = info.MethodParams[methodIndex][methodParamsIndex++];
+						return true;
+					}
+					methodIndex++;
+					methodParamsIndex = 0;
+				}
+				return false;
 			}
 		}
 	}
