@@ -1,10 +1,13 @@
 {
-  "name": "com.kryzarel.dependencyinjector",
+  "name": "com.kryzarel.dependency-injector",
   "version": "0.0.1",
   "displayName": "Dependency Injector",
   "description": "A simple dependency injector.",
   "license": "MIT",
   "author": {
     "name": "Kryzarel"
+  },
+  "dependencies": {
+    "com.kryzarel.c-sharp-utilities": "0.0.1"
   }
 }

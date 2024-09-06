@@ -1,7 +1,9 @@
 {
     "name": "Kryz.DI",
     "rootNamespace": "Kryz.DI",
-    "references": [],
+    "references": [
+        "Kryz.SharpUtils"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
