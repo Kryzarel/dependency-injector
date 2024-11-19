@@ -2,7 +2,7 @@
     "name": "Kryz.DI",
     "rootNamespace": "Kryz.DI",
     "references": [
-        "Kryz.SharpUtils"
+        "Kryz.Utils"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
