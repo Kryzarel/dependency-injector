@@ -1,6 +1,6 @@
 {
   "name": "com.kryzarel.dependency-injector",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "displayName": "Kryz - Dependency Injector",
   "description": "A simple dependency injector.",
   "license": "MIT",
@@ -8,6 +8,6 @@
     "name": "Kryzarel"
   },
   "dependencies": {
-    "com.kryzarel.c-sharp-utilities": "0.0.1"
+    "com.kryzarel.c-sharp-utilities": "0.0.0"
   }
 }
