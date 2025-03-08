@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using Kryz.DI.Reflection;
 using NUnit.Framework;
 
 namespace Kryz.DI.Tests
 {
 	public class ReflectionInjectorTests
 	{
-		private class TypeResolver : ITypeResolver
+		private class TypeResolver : IResolver
 		{
 			private readonly Dictionary<Type, object> objects = new();
 			private readonly Dictionary<Type, Type> registrations = new();

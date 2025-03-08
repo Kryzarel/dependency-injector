@@ -2,7 +2,7 @@ using System;
 
 namespace Kryz.DI
 {
-	public interface ITypeResolver
+	public interface IResolver
 	{
 		T GetObject<T>();
 		object GetObject(Type type);

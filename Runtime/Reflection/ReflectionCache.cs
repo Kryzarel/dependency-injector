@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Kryz.Utils;
 
-namespace Kryz.DI
+namespace Kryz.DI.Reflection
 {
 	public class ReflectionCache
 	{

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace Kryz.DI
+namespace Kryz.DI.Reflection
 {
 	/// <summary>
 	/// <para>This class should handle everything that requires reflection in the dependency injection framework.</para>
 	/// <para>No other class in this assembly, other than <see cref="ReflectionCache"/>, should use the <see cref="System.Reflection"/> namespace.</para>
 	/// </summary>
-	public class ReflectionInjector
+	public class ReflectionInjector : IInjector
 	{
 		private readonly ReflectionCache reflectionCache = new();
 		// If you have a method with 32 parameters or more, kindly reconsider.
@@ -21,7 +21,7 @@ namespace Kryz.DI
 			paramCache[0] = Array.Empty<object>();
 		}
 
-		public object CreateObject(Type type, ITypeResolver typeResolver)
+		public object CreateObject(Type type, IResolver typeResolver)
 		{
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
@@ -45,7 +45,7 @@ namespace Kryz.DI
 			throw new AbstractTypeException($"Can't create object of type {type.FullName} because it is abstract.");
 		}
 
-		public void Inject(object obj, ITypeResolver typeResolver)
+		public void Inject(object obj, IResolver typeResolver)
 		{
 			Type type = obj.GetType();
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
@@ -77,12 +77,12 @@ namespace Kryz.DI
 			}
 		}
 
-		public bool HasCircularDependency(Type type, ITypeResolver typeResolver)
+		public bool HasCircularDependency(Type type, IResolver typeResolver)
 		{
 			return HasCircularDependency(type, typeResolver, out _);
 		}
 
-		public bool HasCircularDependency(Type type, ITypeResolver typeResolver, out Type? circType)
+		public bool HasCircularDependency(Type type, IResolver typeResolver, out Type? circType)
 		{
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 			circularDependencyTypes.Add(type);

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Kryz.DI.Reflection;
 using NUnit.Framework;
 
 namespace Kryz.DI.Tests

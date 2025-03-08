@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public class Container : ITypeResolver
+	public class Container : IResolver
 	{
 		private readonly struct Registration
 		{
@@ -24,14 +25,14 @@ namespace Kryz.DI
 		private readonly List<Container> children = new();
 		private readonly Dictionary<Type, object> objects = new();
 		private readonly Dictionary<Type, Registration> registrations = new();
-		private readonly ReflectionInjector reflectionInjector;
+		private readonly IInjector injector;
 
 		public Container()
 		{
 			Root = this;
 			Parent = null;
 			Children = children;
-			reflectionInjector = new ReflectionInjector();
+			injector = new ReflectionInjector();
 		}
 
 		private Container(Container parent)
@@ -39,7 +40,7 @@ namespace Kryz.DI
 			Root = parent.Root;
 			Parent = parent;
 			Children = children;
-			reflectionInjector = parent.reflectionInjector;
+			injector = parent.injector;
 			parent.children.Add(this);
 		}
 
@@ -127,7 +128,7 @@ namespace Kryz.DI
 		{
 			Type type = typeof(TDerived);
 			registrations[typeof(TBase)] = new Registration(type);
-			if (reflectionInjector.HasCircularDependency(type, this, out Type? circType))
+			if (injector.HasCircularDependency(type, this, out Type? circType))
 			{
 				throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
 			}
@@ -151,7 +152,7 @@ namespace Kryz.DI
 		{
 			Type type = typeof(TDerived);
 			registrations[typeof(TBase)] = new Registration(type, true);
-			if (reflectionInjector.HasCircularDependency(type, this, out Type? circType))
+			if (injector.HasCircularDependency(type, this, out Type? circType))
 			{
 				throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
 			}
@@ -171,13 +172,13 @@ namespace Kryz.DI
 
 		public void Inject<T>(T obj) where T : notnull
 		{
-			reflectionInjector.Inject(obj, this);
+			injector.Inject(obj, this);
 		}
 
 		private object CreateAndInject(Type type)
 		{
-			object obj = reflectionInjector.CreateObject(type, this);
-			reflectionInjector.Inject(obj, this);
+			object obj = injector.CreateObject(type, this);
+			injector.Inject(obj, this);
 			return obj;
 		}
 
