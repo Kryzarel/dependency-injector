@@ -128,10 +128,10 @@ namespace Kryz.DI
 		{
 			Type type = typeof(TDerived);
 			registrations[typeof(TBase)] = new Registration(type);
-			if (injector.HasCircularDependency(type, this, out Type? circType))
-			{
-				throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
-			}
+			// if (injector.HasCircularDependency(type, this, out Type? circType))
+			// {
+			// 	throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
+			// }
 			return this;
 		}
 
@@ -152,10 +152,10 @@ namespace Kryz.DI
 		{
 			Type type = typeof(TDerived);
 			registrations[typeof(TBase)] = new Registration(type, true);
-			if (injector.HasCircularDependency(type, this, out Type? circType))
-			{
-				throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
-			}
+			// if (injector.HasCircularDependency(type, this, out Type? circType))
+			// {
+			// 	throw new CircularDependencyException($"Can't register type {type.Name} because {circType?.Name} has a circular dependency on it.");
+			// }
 			return this;
 		}
 

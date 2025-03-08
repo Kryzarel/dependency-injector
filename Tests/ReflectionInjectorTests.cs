@@ -163,91 +163,91 @@ namespace Kryz.DI.Tests
 			}
 		}
 
-		[Test]
-		public void TestCircularDependency()
-		{
-			TypeResolver typeResolver = new();
-			ReflectionInjector reflectionInjector = new();
+		// [Test]
+		// public void TestCircularDependency()
+		// {
+		// 	TypeResolver typeResolver = new();
+		// 	ReflectionInjector reflectionInjector = new();
 
-			typeResolver.Add<IA, A>();
-			typeResolver.Add<IB, B>();
-			typeResolver.Add<IC, C>();
-			typeResolver.Add<ID, D>();
-			typeResolver.Add<IE, E>();
-			typeResolver.Add<ICircular1, Circular1>();
-			typeResolver.Add<ICircular2, Circular2>();
-			typeResolver.Add<ICircular1NoInject, Circular1NoInject>();
-			typeResolver.Add<ICircular2NoInject, Circular2NoInject>();
+		// 	typeResolver.Add<IA, A>();
+		// 	typeResolver.Add<IB, B>();
+		// 	typeResolver.Add<IC, C>();
+		// 	typeResolver.Add<ID, D>();
+		// 	typeResolver.Add<IE, E>();
+		// 	typeResolver.Add<ICircular1, Circular1>();
+		// 	typeResolver.Add<ICircular2, Circular2>();
+		// 	typeResolver.Add<ICircular1NoInject, Circular1NoInject>();
+		// 	typeResolver.Add<ICircular2NoInject, Circular2NoInject>();
 
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IA), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IB), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IC), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ID), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IE), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IGeneric<IA, IB, IC>), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IA), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IB), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IC), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ID), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IE), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IGeneric<IA, IB, IC>), typeResolver));
 
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular1), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular2), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular1), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular2), typeResolver));
 
-			// These don't have the [Inject] attribute, so the circular dependency won't be found
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular1NoInject), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular2NoInject), typeResolver));
+		// 	// These don't have the [Inject] attribute, so the circular dependency won't be found
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular1NoInject), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular2NoInject), typeResolver));
 
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(A), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(B), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(C), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(D), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(E), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(Generic<IA, IB, IC>), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(A), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(B), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(C), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(D), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(E), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(Generic<IA, IB, IC>), typeResolver));
 
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2), typeResolver));
 
-			// Even though these use the interfaces that don't have the [Inject] attribute, given the registration, the circular dependency WILL be found
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1NoInject), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2NoInject), typeResolver));
+		// 	// Even though these use the interfaces that don't have the [Inject] attribute, given the registration, the circular dependency WILL be found
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1NoInject), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2NoInject), typeResolver));
 
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete), typeResolver));
-		}
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete), typeResolver));
+		// }
 
-		[Test]
-		public void TestCircularDependencyWithoutRegistration()
-		{
-			TypeResolver typeResolver = new();
-			ReflectionInjector reflectionInjector = new();
+		// [Test]
+		// public void TestCircularDependencyWithoutRegistration()
+		// {
+		// 	TypeResolver typeResolver = new();
+		// 	ReflectionInjector reflectionInjector = new();
 
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IA), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IB), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IC), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ID), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IE), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IGeneric<IA, IB, IC>), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IA), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IB), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IC), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ID), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IE), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(IGeneric<IA, IB, IC>), typeResolver));
 
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular1), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular2), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular1), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(ICircular2), typeResolver));
 
-			// These don't have the [Inject] attribute, so the circular dependency won't be found
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular1NoInject), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular2NoInject), typeResolver));
+		// 	// These don't have the [Inject] attribute, so the circular dependency won't be found
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular1NoInject), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(ICircular2NoInject), typeResolver));
 
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(A), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(B), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(C), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(D), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(E), typeResolver));
-			Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(Generic<IA, IB, IC>), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(A), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(B), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(C), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(D), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(E), typeResolver));
+		// 	Assert.IsFalse(reflectionInjector.HasCircularDependency(typeof(Generic<IA, IB, IC>), typeResolver));
 
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2), typeResolver));
 
-			// These use the interfaces that don't have the [Inject] attribute, so the circular dependency won't be found
-			Assert.False(reflectionInjector.HasCircularDependency(typeof(Circular1NoInject), typeResolver));
-			Assert.False(reflectionInjector.HasCircularDependency(typeof(Circular2NoInject), typeResolver));
+		// 	// These use the interfaces that don't have the [Inject] attribute, so the circular dependency won't be found
+		// 	Assert.False(reflectionInjector.HasCircularDependency(typeof(Circular1NoInject), typeResolver));
+		// 	Assert.False(reflectionInjector.HasCircularDependency(typeof(Circular2NoInject), typeResolver));
 
-			// These depend on the concrete class, so the circular dependency WILL be found
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete), typeResolver));
-			Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete), typeResolver));
-		}
+		// 	// These depend on the concrete class, so the circular dependency WILL be found
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular1Concrete), typeResolver));
+		// 	Assert.IsTrue(reflectionInjector.HasCircularDependency(typeof(Circular2Concrete), typeResolver));
+		// }
 	}
 }

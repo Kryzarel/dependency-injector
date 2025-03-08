@@ -4,51 +4,111 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public class DependencyGraph
+	internal class DependencyGraph<T1, T2> where T1 : IReadOnlyDictionary<Type, Registration> where T2 : IReadOnlyDictionary<Type, object>
 	{
+		private readonly ReflectionCache reflectionCache = ReflectionCache.Instance;
+		private readonly ReadOnlyContainer? parent;
+		private readonly IReadOnlyDictionary<Type, object> objects;
 		private readonly IReadOnlyDictionary<Type, Registration> registrations;
 
-		private readonly ReflectionCache reflectionCache = new();
-		private readonly Dictionary<Type, Type> circularDependencies = new();
+		public readonly IReadOnlyDictionary<Type, IReadOnlyList<Type>>? MissingDependencies;
+		public readonly IReadOnlyDictionary<Type, IReadOnlyList<Type>>? CircularDependencies;
 
-		internal DependencyGraph(IReadOnlyDictionary<Type, Registration> registrations)
+		internal static DependencyGraph<T1, T2> Create(ReadOnlyContainer? parent, T1 registrations, T2 objects)
 		{
+			return new DependencyGraph<T1, T2>(parent, registrations, objects);
+		}
+
+		internal DependencyGraph(ReadOnlyContainer? parent, T1 registrations, T2 objects)
+		{
+			this.parent = parent;
+			this.objects = objects;
 			this.registrations = registrations;
-			HashSet<Type> visitedTypes = new();
+
+			Dictionary<Type, IReadOnlyList<Type>>? missingDependencies = null;
+			Dictionary<Type, IReadOnlyList<Type>>? circularDependencies = null;
+			List<Type>? visitedTypes = null;
 
 			foreach (Type type in registrations.Keys)
 			{
-				if (HasCircularDependency(type, visitedTypes, out Type? circular))
+				if (HasMissingDependency(type, out IReadOnlyList<Type> missing))
 				{
-					circularDependencies[type] = circular!;
+					missingDependencies ??= new Dictionary<Type, IReadOnlyList<Type>>();
+					missingDependencies[type] = missing;
+				}
+
+				visitedTypes ??= new();
+				if (HasCircularDependency(type, visitedTypes))
+				{
+					circularDependencies ??= new Dictionary<Type, IReadOnlyList<Type>>();
+					circularDependencies[type] = visitedTypes.ToArray();
 				}
 				visitedTypes.Clear();
 			}
+
+			MissingDependencies = missingDependencies;
+			CircularDependencies = circularDependencies;
 		}
 
-		private bool HasCircularDependency(Type type, HashSet<Type> visitedTypes, out Type? circular)
+		private bool HasMissingDependency(Type type, out IReadOnlyList<Type> missing)
 		{
+			List<Type>? missingTypes = null;
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
-			visitedTypes.Add(type);
 
 			foreach (Type dependency in new DependenciesEnumerator(info))
 			{
-				if (!visitedTypes.Add(dependency))
+				if (!TryGetType(dependency, out _))
 				{
-					circular = dependency;
+					missingTypes ??= new List<Type>();
+					missingTypes.Add(dependency);
+				}
+			}
+
+			missing = missingTypes != null ? missingTypes : Array.Empty<Type>();
+			return missing.Count > 0;
+		}
+
+		private bool TryGetType(Type type, out Type? registeredType)
+		{
+			if (registrations.TryGetValue(type, out Registration registration))
+			{
+				registeredType = registration.Type;
+				return true;
+			}
+
+			for (ReadOnlyContainer? container = parent; container != null; container = container.Parent)
+			{
+				if (container.TryGetType(type, out registeredType))
+				{
 					return true;
 				}
+			}
 
-				if (registrations.TryGetValue(dependency, out Registration registration) && registration.Object == null)
+			registeredType = default;
+			return false;
+		}
+
+		private bool HasCircularDependency(Type type, List<Type> visitedTypes)
+		{
+			if (visitedTypes.Contains(type))
+			{
+				visitedTypes.Add(type);
+				return true;
+			}
+			visitedTypes.Add(type);
+
+			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
+
+			foreach (Type dependency in new DependenciesEnumerator(info))
+			{
+				if (registrations.TryGetValue(dependency, out Registration registration) && !objects.ContainsKey(type))
 				{
-					if (HasCircularDependency(registration.Type, visitedTypes, out circular))
+					if (HasCircularDependency(registration.Type, visitedTypes))
 					{
 						return true;
 					}
 				}
 			}
-
-			circular = null;
 			return false;
 		}
 

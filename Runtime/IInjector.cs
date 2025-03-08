@@ -6,6 +6,6 @@ namespace Kryz.DI
 	{
 		void Inject(object obj, IResolver typeResolver);
 		object CreateObject(Type type, IResolver typeResolver);
-		bool HasCircularDependency(Type type, IResolver typeResolver, out Type? circType);
+		// bool HasCircularDependency(Type type, IResolver typeResolver, out Type? circType);
 	}
 }
