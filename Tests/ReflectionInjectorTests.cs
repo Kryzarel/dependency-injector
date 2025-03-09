@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Kryz.DI.Reflection;
 using NUnit.Framework;
 
@@ -15,19 +16,19 @@ namespace Kryz.DI.Tests
 			public T GetObject<T>() => (T)objects[typeof(T)];
 			public object GetObject(Type type) => objects[type];
 
-			public bool TryGetObject<T>(out T? obj)
+			public bool TryGetObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
 			{
 				bool result = objects.TryGetValue(typeof(T), out object o);
 				obj = result ? (T)o : default;
 				return result;
 			}
-			public bool TryGetObject(Type type, out object? obj) => objects.TryGetValue(type, out obj);
+			public bool TryGetObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj) => objects.TryGetValue(type, out obj);
 
 			public Type GetType<T>() => registrations[typeof(T)];
 			public Type GetType(Type type) => registrations[type];
 
-			public bool TryGetType<T>(out Type? type) => registrations.TryGetValue(typeof(T), out type);
-			public bool TryGetType(Type type, out Type? resolvedType) => registrations.TryGetValue(type, out resolvedType);
+			public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type type) => registrations.TryGetValue(typeof(T), out type);
+			public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType) => registrations.TryGetValue(type, out resolvedType);
 
 			public void Add<T1, T2>(T2 obj) where T2 : notnull, T1
 			{
@@ -36,9 +37,6 @@ namespace Kryz.DI.Tests
 			}
 
 			public void Add<T1, T2>() where T2 : T1 => registrations[typeof(T1)] = typeof(T2);
-
-			public bool ContainsObject<T>() => objects.ContainsKey(typeof(T));
-			public bool ContainsObject(Type type) => objects.ContainsKey(type);
 		}
 
 		private static void Create(TypeResolver typeResolver, ReflectionInjector reflectionInjector, bool inject, out A a, out B b, out C c, out D d, out E e, out Empty empty, out Generic<IA, IB, IC> generic, out Generic<ID, IE, Empty> generic2)

@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kryz.DI
 {
 	public class ReadOnlyContainer : IResolver
 	{
 		public readonly ReadOnlyContainer? Parent;
+		public readonly IInjector Injector;
 
-		private readonly IInjector injector;
 		private readonly Dictionary<Type, object> objects;
 		private readonly IReadOnlyDictionary<Type, Registration> registrations;
 
 		internal ReadOnlyContainer(IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
 		{
-			this.injector = injector;
+			Injector = injector;
 			this.objects = objects;
 			this.registrations = registrations;
 		}
@@ -21,26 +22,9 @@ namespace Kryz.DI
 		internal ReadOnlyContainer(ReadOnlyContainer parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
 		{
 			Parent = parent;
-			injector = parent.injector;
+			Injector = parent.Injector;
 			this.objects = objects;
 			this.registrations = registrations;
-		}
-
-		public bool ContainsObject<T>()
-		{
-			return ContainsObject(typeof(T));
-		}
-
-		public bool ContainsObject(Type type)
-		{
-			for (ReadOnlyContainer? container = this; container != null; container = container.Parent)
-			{
-				if (container.objects.ContainsKey(type))
-				{
-					return true;
-				}
-			}
-			return false;
 		}
 
 		public T GetObject<T>()
@@ -52,7 +36,7 @@ namespace Kryz.DI
 		{
 			if (TryGetObject(type, out object? obj))
 			{
-				return obj!;
+				return obj;
 			}
 			throw new InjectionException($"Type {type.FullName} has not been registered.");
 		}
@@ -66,44 +50,54 @@ namespace Kryz.DI
 		{
 			if (TryGetType(type, out Type? resolvedType))
 			{
-				return resolvedType!;
+				return resolvedType;
 			}
 			throw new InjectionException($"Type {type.FullName} has not been registered.");
 		}
 
-		public bool TryGetObject<T>(out T? obj)
+		public bool TryGetObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
 		{
-			bool result = TryGetObject(typeof(T), out object? o);
-			obj = result ? (T)o! : default;
-			return result;
+			if (TryGetObject(typeof(T), out object? o))
+			{
+				obj = (T)o;
+				return true;
+			}
+			obj = default;
+			return false;
 		}
 
-		public bool TryGetObject(Type type, out object? obj)
+		public bool TryGetObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj)
 		{
+			if (objects.TryGetValue(type, out obj))
+			{
+				return true;
+			}
+
 			for (ReadOnlyContainer? container = this; container != null; container = container.Parent)
 			{
 				if (container.registrations.TryGetValue(type, out Registration registration))
 				{
 					obj = registration.Lifetime switch
 					{
-						Lifetime.Singleton => container.GetOrCreateObject(type),
-						Lifetime.Scoped => GetOrCreateObject(type),
-						Lifetime.Transient => CreateAndInjectObject(type),
+						Lifetime.Singleton => container.GetOrCreateObject(type, registration.Type),
+						Lifetime.Scoped => GetOrCreateObject(type, registration.Type),
+						Lifetime.Transient => CreateAndInjectObject(registration.Type),
 						_ => throw new NotImplementedException(),
 					};
 					return true;
 				}
 			}
+
 			obj = default;
 			return false;
 		}
 
-		public bool TryGetType<T>(out Type? type)
+		public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type type)
 		{
 			return TryGetType(typeof(T), out type);
 		}
 
-		public bool TryGetType(Type type, out Type? resolvedType)
+		public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
 			for (ReadOnlyContainer? container = this; container != null; container = container.Parent)
 			{
@@ -117,19 +111,19 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private object GetOrCreateObject(Type type)
+		private object GetOrCreateObject(Type type, Type resolvedType)
 		{
 			if (!objects.TryGetValue(type, out object obj))
 			{
-				obj = CreateAndInjectObject(type);
+				obj = CreateAndInjectObject(resolvedType);
 			}
 			return obj;
 		}
 
-		private object CreateAndInjectObject(Type type)
+		private object CreateAndInjectObject(Type resolvedType)
 		{
-			object obj = injector.CreateObject(type, this);
-			injector.Inject(type, this);
+			object obj = Injector.CreateObject(resolvedType, this);
+			Injector.Inject(obj, this);
 			return obj;
 		}
 	}

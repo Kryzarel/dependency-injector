@@ -32,8 +32,6 @@ namespace Kryz.DI.Reflection
 			}
 		}
 
-		public static readonly ReflectionCache Instance = new();
-
 		private const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
 		private static readonly Type injectAttribute = typeof(InjectAttribute);

@@ -1,30 +1,29 @@
 using System;
 using System.Collections.Generic;
-using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	internal class DependencyGraph<T1, T2> where T1 : IReadOnlyDictionary<Type, Registration> where T2 : IReadOnlyDictionary<Type, object>
+	internal readonly struct DependencyGraph<T> where T : IEnumerable<Type>
 	{
-		private readonly ReflectionCache reflectionCache = ReflectionCache.Instance;
-		private readonly ReadOnlyContainer? parent;
-		private readonly IReadOnlyDictionary<Type, object> objects;
-		private readonly IReadOnlyDictionary<Type, Registration> registrations;
+		private readonly IResolver resolver;
+		private readonly IInjector injector;
 
 		public readonly IReadOnlyDictionary<Type, IReadOnlyList<Type>>? MissingDependencies;
 		public readonly IReadOnlyDictionary<Type, IReadOnlyList<Type>>? CircularDependencies;
 
-		internal DependencyGraph(ReadOnlyContainer? parent, T1 registrations, T2 objects)
+		internal DependencyGraph(IResolver resolver, IInjector injector, T types)
 		{
-			this.parent = parent;
-			this.objects = objects;
-			this.registrations = registrations;
+			this.resolver = resolver;
+			this.injector = injector;
 
+			MissingDependencies = null;
+			CircularDependencies = null;
+
+			List<Type>? visitedTypes = null;
 			Dictionary<Type, IReadOnlyList<Type>>? missingDependencies = null;
 			Dictionary<Type, IReadOnlyList<Type>>? circularDependencies = null;
-			List<Type>? visitedTypes = null;
 
-			foreach (Type type in registrations.Keys)
+			foreach (Type type in types)
 			{
 				if (HasMissingDependency(type, out IReadOnlyList<Type> missing))
 				{
@@ -48,11 +47,12 @@ namespace Kryz.DI
 		private bool HasMissingDependency(Type type, out IReadOnlyList<Type> missing)
 		{
 			List<Type>? missingTypes = null;
-			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
-			foreach (Type dependency in new DependenciesEnumerator(info))
+			IReadOnlyList<Type> dependencies = injector.GetDependencies(type);
+			for (int i = 0; i < dependencies.Count; i++)
 			{
-				if (!TryGetType(dependency, out _))
+				Type dependency = dependencies[i];
+				if (!resolver.TryGetType(type, out _))
 				{
 					missingTypes ??= new List<Type>();
 					missingTypes.Add(dependency);
@@ -61,26 +61,6 @@ namespace Kryz.DI
 
 			missing = missingTypes != null ? missingTypes : Array.Empty<Type>();
 			return missing.Count > 0;
-		}
-
-		private bool TryGetType(Type type, out Type? registeredType)
-		{
-			if (registrations.TryGetValue(type, out Registration registration))
-			{
-				registeredType = registration.Type;
-				return true;
-			}
-
-			for (ReadOnlyContainer? container = parent; container != null; container = container.Parent)
-			{
-				if (container.TryGetType(type, out registeredType))
-				{
-					return true;
-				}
-			}
-
-			registeredType = default;
-			return false;
 		}
 
 		private bool HasCircularDependency(Type type, List<Type> visitedTypes)
@@ -92,77 +72,19 @@ namespace Kryz.DI
 			}
 			visitedTypes.Add(type);
 
-			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
-
-			foreach (Type dependency in new DependenciesEnumerator(info))
+			IReadOnlyList<Type> dependencies = injector.GetDependencies(type);
+			for (int i = 0; i < dependencies.Count; i++)
 			{
-				if (registrations.TryGetValue(dependency, out Registration registration) && !objects.ContainsKey(type))
+				Type dependency = dependencies[i];
+				if (resolver.TryGetType(dependency, out Type? resolvedType))
 				{
-					if (HasCircularDependency(registration.Type, visitedTypes))
+					if (HasCircularDependency(resolvedType!, visitedTypes))
 					{
 						return true;
 					}
 				}
 			}
 			return false;
-		}
-
-		private struct DependenciesEnumerator
-		{
-			private readonly ReflectionCache.InjectionInfo info;
-
-			private Type current;
-			private int constructorParamIndex;
-			private int fieldIndex;
-			private int propertyIndex;
-			private int methodIndex;
-			private int methodParamsIndex;
-
-			public readonly Type Current => current;
-
-			public DependenciesEnumerator(ReflectionCache.InjectionInfo info)
-			{
-				this.info = info;
-				current = null!;
-
-				constructorParamIndex = 0;
-				fieldIndex = 0;
-				propertyIndex = 0;
-				methodIndex = 0;
-				methodParamsIndex = 0;
-			}
-
-			public bool MoveNext()
-			{
-				while (constructorParamIndex < info.ConstructorParams.Count)
-				{
-					current = info.ConstructorParams[constructorParamIndex++];
-					return true;
-				}
-				while (fieldIndex < info.Fields.Count)
-				{
-					current = info.Fields[fieldIndex++].FieldType;
-					return true;
-				}
-				while (propertyIndex < info.Properties.Count)
-				{
-					current = info.Properties[propertyIndex++].PropertyType;
-					return true;
-				}
-				while (methodIndex < info.MethodParams.Count)
-				{
-					while (methodParamsIndex < info.MethodParams[methodIndex].Count)
-					{
-						current = info.MethodParams[methodIndex][methodParamsIndex++];
-						return true;
-					}
-					methodIndex++;
-					methodParamsIndex = 0;
-				}
-				return false;
-			}
-
-			public readonly DependenciesEnumerator GetEnumerator() => this;
 		}
 	}
 }

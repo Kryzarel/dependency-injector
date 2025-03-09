@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Kryz.DI.Reflection;
 
 namespace Kryz.DI
@@ -63,30 +64,30 @@ namespace Kryz.DI
 
 		public T GetObject<T>()
 		{
-			return (T)GetObject(typeof(T))!;
+			return (T)GetObject(typeof(T));
 		}
 
 		public object GetObject(Type type)
 		{
 			if (TryGetObject(type, out object? obj))
 			{
-				return obj!;
+				return obj;
 			}
 			throw new InjectionException($"No object for type {type.FullName} has been registered.");
 		}
 
-		public bool TryGetObject<T>(out T? obj)
+		public bool TryGetObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
 		{
 			if (TryGetObject(typeof(T), out object? o))
 			{
-				obj = (T)o!; // We should assume this is NOT null here. If it is, something went horribly wrong.
+				obj = (T)o;
 				return true;
 			}
 			obj = default;
 			return false;
 		}
 
-		public bool TryGetObject(Type type, out object? obj)
+		public bool TryGetObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj)
 		{
 			return TryGetObject_Internal(this, type, out obj);
 		}
@@ -96,7 +97,7 @@ namespace Kryz.DI
 			return GetType(typeof(T));
 		}
 
-		public bool TryGetType<T>(out Type? type)
+		public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type type)
 		{
 			return TryGetType(typeof(T), out type);
 		}
@@ -105,12 +106,12 @@ namespace Kryz.DI
 		{
 			if (TryGetType(type, out Type? t))
 			{
-				return t!;
+				return t;
 			}
 			throw new InjectionException($"Type {type.FullName} has not been registered.");
 		}
 
-		public bool TryGetType(Type type, out Type? resolvedType)
+		public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
 			return TryGetType_Internal(this, type, out resolvedType);
 		}
@@ -182,7 +183,7 @@ namespace Kryz.DI
 			return obj;
 		}
 
-		private static bool TryGetType_Internal(Container? container, Type type, out Type? resolvedType)
+		private static bool TryGetType_Internal(Container? container, Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
 			while (container != null)
 			{
@@ -197,7 +198,7 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private static bool TryGetObject_Internal(Container? container, Type type, out object? obj)
+		private static bool TryGetObject_Internal(Container? container, Type type, [MaybeNullWhen(returnValue: false)] out object obj)
 		{
 			while (container != null)
 			{
@@ -211,7 +212,7 @@ namespace Kryz.DI
 			return false;
 		}
 
-		private bool TryGetObject_Internal(Type type, out object? obj)
+		private bool TryGetObject_Internal(Type type, [MaybeNullWhen(returnValue: false)] out object obj)
 		{
 			if (registrations.TryGetValue(type, out Registration registration))
 			{
@@ -219,24 +220,14 @@ namespace Kryz.DI
 				{
 					obj = CreateAndInject(registration.Type);
 				}
-				else if (!objects.TryGetValue(registration.Type, out obj))
+				else if (!objects.TryGetValue(type, out obj))
 				{
-					obj = objects[registration.Type] = CreateAndInject(registration.Type);
+					obj = objects[type] = CreateAndInject(registration.Type);
 				}
 				return true;
 			}
 			obj = null;
 			return false;
-		}
-
-		public bool ContainsObject<T>()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool ContainsObject(Type type)
-		{
-			throw new NotImplementedException();
 		}
 	}
 }

@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 
 namespace Kryz.DI
 {
 	public interface IInjector
 	{
-		void Inject(object obj, IResolver typeResolver);
 		object CreateObject(Type type, IResolver typeResolver);
-		// bool HasCircularDependency(Type type, IResolver typeResolver, out Type? circType);
+		void Inject(object obj, IResolver typeResolver);
+		IReadOnlyList<Type> GetDependencies(Type type);
 	}
 }

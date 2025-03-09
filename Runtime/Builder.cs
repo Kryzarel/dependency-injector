@@ -41,22 +41,27 @@ namespace Kryz.DI
 
 		public ReadOnlyContainer Build()
 		{
-			DependencyGraph<Dictionary<Type, Registration>, Dictionary<Type, object>> graph = new(parent, registrations, objects);
+			// Create copies of the dictionaries to avoid modifications to the Container if the Builder keeps being registered to
+			Dictionary<Type, object> obj = new(objects);
+			Dictionary<Type, Registration> reg = new(registrations);
+			IInjector injector = parent?.Injector ?? new ReflectionInjector();
+
+			ReadOnlyContainer container = parent != null ? new ReadOnlyContainer(parent, reg, obj) : new ReadOnlyContainer(injector, reg, obj);
+
+			// Make one last modification to the dictionaries: register the Container itself as IResolver
+			obj[typeof(IResolver)] = container;
+			reg[typeof(IResolver)] = new Registration(typeof(IResolver), Lifetime.Singleton);
+
+			DependencyGraph<Dictionary<Type, Registration>.KeyCollection> graph = new(container, injector, reg.Keys);
 			if (graph.MissingDependencies != null && graph.MissingDependencies.Count > 0)
 			{
-				throw new MissingDependencyException($"Cannot build a container with missing dependencies:{FormatMissingDependencies(graph.MissingDependencies)}");
+				throw new MissingDependencyException($"Cannot build a container with missing dependencies: {FormatMissingDependencies(graph.MissingDependencies)}");
 			}
 			if (graph.CircularDependencies != null && graph.CircularDependencies.Count > 0)
 			{
-				throw new CircularDependencyException($"Cannot build a container with circular dependencies:{FormatCircularDependencies(graph.CircularDependencies)}");
+				throw new CircularDependencyException($"Cannot build a container with circular dependencies: {FormatCircularDependencies(graph.CircularDependencies)}");
 			}
-
-			// Create copies of the dictionaries to avoid further modifications
-			if (parent != null)
-			{
-				return new ReadOnlyContainer(parent, new Dictionary<Type, Registration>(registrations), new Dictionary<Type, object>(objects));
-			}
-			return new ReadOnlyContainer(new ReflectionInjector(), new Dictionary<Type, Registration>(registrations), new Dictionary<Type, object>(objects));
+			return container;
 		}
 
 		private static string FormatMissingDependencies(IReadOnlyDictionary<Type, IReadOnlyList<Type>> dict)
