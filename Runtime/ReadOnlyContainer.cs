@@ -26,6 +26,23 @@ namespace Kryz.DI
 			this.registrations = registrations;
 		}
 
+		public bool ContainsObject<T>()
+		{
+			return ContainsObject(typeof(T));
+		}
+
+		public bool ContainsObject(Type type)
+		{
+			for (ReadOnlyContainer? container = this; container != null; container = container.Parent)
+			{
+				if (container.objects.ContainsKey(type))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public T GetObject<T>()
 		{
 			return (T)GetObject(typeof(T));

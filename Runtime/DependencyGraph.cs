@@ -14,11 +14,6 @@ namespace Kryz.DI
 		public readonly IReadOnlyDictionary<Type, IReadOnlyList<Type>>? MissingDependencies;
 		public readonly IReadOnlyDictionary<Type, IReadOnlyList<Type>>? CircularDependencies;
 
-		internal static DependencyGraph<T1, T2> Create(ReadOnlyContainer? parent, T1 registrations, T2 objects)
-		{
-			return new DependencyGraph<T1, T2>(parent, registrations, objects);
-		}
-
 		internal DependencyGraph(ReadOnlyContainer? parent, T1 registrations, T2 objects)
 		{
 			this.parent = parent;

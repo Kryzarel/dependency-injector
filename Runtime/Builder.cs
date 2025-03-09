@@ -66,7 +66,7 @@ namespace Kryz.DI
 
 		private static string FormatCircularDependencies(IReadOnlyDictionary<Type, IReadOnlyList<Type>> dict)
 		{
-			return string.Join('\n', dict.Select(item => $"{{ {item.Key} - Path: {string.Join(", ", item.Value)} }}"));
+			return string.Join('\n', dict.Select(item => $"{{ {item.Key} - Path: {string.Join("->", item.Value)} }}"));
 		}
 	}
 }

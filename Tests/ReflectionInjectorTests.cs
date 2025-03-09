@@ -36,6 +36,9 @@ namespace Kryz.DI.Tests
 			}
 
 			public void Add<T1, T2>() where T2 : T1 => registrations[typeof(T1)] = typeof(T2);
+
+			public bool ContainsObject<T>() => objects.ContainsKey(typeof(T));
+			public bool ContainsObject(Type type) => objects.ContainsKey(type);
 		}
 
 		private static void Create(TypeResolver typeResolver, ReflectionInjector reflectionInjector, bool inject, out A a, out B b, out C c, out D d, out E e, out Empty empty, out Generic<IA, IB, IC> generic, out Generic<ID, IE, Empty> generic2)

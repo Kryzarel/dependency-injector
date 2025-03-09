@@ -228,5 +228,15 @@ namespace Kryz.DI
 			obj = null;
 			return false;
 		}
+
+		public bool ContainsObject<T>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool ContainsObject(Type type)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }
