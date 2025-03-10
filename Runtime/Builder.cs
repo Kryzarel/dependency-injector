@@ -5,34 +5,38 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public class Builder
+	public ref struct Builder
 	{
 		private readonly ReadOnlyContainer? parent;
-		private readonly Dictionary<Type, object> objects = new();
-		private readonly Dictionary<Type, Registration> registrations = new();
+		private readonly Dictionary<Type, object> objects;
+		private readonly Dictionary<Type, Registration> registrations;
+		private bool hasBuilt;
 
 		public Builder(ReadOnlyContainer? parent = null)
 		{
 			this.parent = parent;
+			objects = new Dictionary<Type, object>();
+			registrations = new Dictionary<Type, Registration>();
+			hasBuilt = false;
 		}
 
-		public Builder Register<T>(Lifetime lifetime)
+		public readonly Builder Register<T>(Lifetime lifetime)
 		{
 			return Register<T, T>(lifetime);
 		}
 
-		public Builder RegisterInstance<T>(T obj) where T : notnull
+		public readonly Builder RegisterInstance<T>(T obj) where T : notnull
 		{
 			return RegisterInstance<T, T>(obj);
 		}
 
-		public Builder Register<TBase, TDerived>(Lifetime lifetime) where TDerived : TBase
+		public readonly Builder Register<TBase, TDerived>(Lifetime lifetime) where TDerived : TBase
 		{
 			registrations[typeof(TBase)] = new Registration(typeof(TDerived), lifetime);
 			return this;
 		}
 
-		public Builder RegisterInstance<TBase, TDerived>(TDerived obj) where TDerived : notnull, TBase
+		public readonly Builder RegisterInstance<TBase, TDerived>(TDerived obj) where TDerived : notnull, TBase
 		{
 			objects[typeof(TBase)] = obj;
 			registrations[typeof(TBase)] = new Registration(typeof(TDerived), Lifetime.Singleton);
@@ -41,25 +45,24 @@ namespace Kryz.DI
 
 		public ReadOnlyContainer Build()
 		{
-			// Create copies of the dictionaries to avoid modifications to the Container if the Builder keeps being registered to
-			Dictionary<Type, object> obj = new(objects);
-			Dictionary<Type, Registration> reg = new(registrations);
+			if (hasBuilt)
+			{
+				throw new InvalidOperationException($"Can't build from the same {nameof(Builder)} more than once.");
+			}
+
+			hasBuilt = true;
 			IInjector injector = parent?.Injector ?? new ReflectionInjector();
+			ReadOnlyContainer container = parent != null ? new ReadOnlyContainer(parent, registrations, objects) : new ReadOnlyContainer(injector, registrations, objects);
+			RegisterInstance<IResolver>(container); // Register the Container itself as IResolver
 
-			ReadOnlyContainer container = parent != null ? new ReadOnlyContainer(parent, reg, obj) : new ReadOnlyContainer(injector, reg, obj);
-
-			// Make one last modification to the dictionaries: register the Container itself as IResolver
-			obj[typeof(IResolver)] = container;
-			reg[typeof(IResolver)] = new Registration(typeof(IResolver), Lifetime.Singleton);
-
-			DependencyGraph<Dictionary<Type, Registration>.KeyCollection> graph = new(container, injector, reg.Keys);
+			DependencyGraph<Dictionary<Type, Registration>.KeyCollection> graph = new(container, injector, registrations.Keys);
 			if (graph.MissingDependencies != null && graph.MissingDependencies.Count > 0)
 			{
-				throw new MissingDependencyException($"Cannot build a container with missing dependencies: {FormatMissingDependencies(graph.MissingDependencies)}");
+				throw new MissingDependencyException($"Can't build a container with missing dependencies: {FormatMissingDependencies(graph.MissingDependencies)}");
 			}
 			if (graph.CircularDependencies != null && graph.CircularDependencies.Count > 0)
 			{
-				throw new CircularDependencyException($"Cannot build a container with circular dependencies: {FormatCircularDependencies(graph.CircularDependencies)}");
+				throw new CircularDependencyException($"Can't build a container with circular dependencies: {FormatCircularDependencies(graph.CircularDependencies)}");
 			}
 			return container;
 		}

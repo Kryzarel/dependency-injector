@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Kryz.Collections;
+using Kryz.Utils;
 
 namespace Kryz.DI
 {
-	internal readonly struct DependencyGraph<T> where T : IEnumerable<Type>
+	internal readonly ref struct DependencyGraph<T> where T : IEnumerable<Type>
 	{
 		private readonly IResolver resolver;
 		private readonly IInjector injector;
@@ -19,7 +21,7 @@ namespace Kryz.DI
 			MissingDependencies = null;
 			CircularDependencies = null;
 
-			List<Type>? visitedTypes = null;
+			NonAllocList<Type> visitedTypes = new();
 			Dictionary<Type, IReadOnlyList<Type>>? missingDependencies = null;
 			Dictionary<Type, IReadOnlyList<Type>>? circularDependencies = null;
 
@@ -31,14 +33,14 @@ namespace Kryz.DI
 					missingDependencies[type] = missing;
 				}
 
-				visitedTypes ??= new();
-				if (HasCircularDependency(type, visitedTypes))
+				if (HasCircularDependency(type, ref visitedTypes))
 				{
 					circularDependencies ??= new Dictionary<Type, IReadOnlyList<Type>>();
-					circularDependencies[type] = visitedTypes.ToArray();
+					circularDependencies[type] = visitedTypes.ToArray<Type, NonAllocList<Type>>();
 				}
 				visitedTypes.Clear();
 			}
+			visitedTypes.Dispose();
 
 			MissingDependencies = missingDependencies;
 			CircularDependencies = circularDependencies;
@@ -63,7 +65,7 @@ namespace Kryz.DI
 			return missing.Count > 0;
 		}
 
-		private bool HasCircularDependency(Type type, List<Type> visitedTypes)
+		private bool HasCircularDependency<TList>(Type type, ref TList visitedTypes) where TList : IList<Type>
 		{
 			if (visitedTypes.Contains(type))
 			{
@@ -78,7 +80,7 @@ namespace Kryz.DI
 				Type dependency = dependencies[i];
 				if (resolver.TryGetType(dependency, out Type? resolvedType))
 				{
-					if (HasCircularDependency(resolvedType!, visitedTypes))
+					if (HasCircularDependency(resolvedType, ref visitedTypes))
 					{
 						return true;
 					}
