@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Kryz.DI
 {
-	public class ReadOnlyContainer : IResolver
+	public class ReadOnlyContainer : IResolver, IDisposable
 	{
 		public readonly ReadOnlyContainer? Parent;
 		public readonly IInjector Injector;
@@ -109,6 +109,22 @@ namespace Kryz.DI
 			}
 			resolvedType = default;
 			return false;
+		}
+
+		public void Dispose()
+		{
+			foreach (object item in objects.Values)
+			{
+				if (item is IDisposable disposable)
+				{
+					disposable.Dispose();
+				}
+			}
+		}
+
+		~ReadOnlyContainer()
+		{
+			Dispose();
 		}
 
 		private object GetOrCreateObject(Type type, Type resolvedType)
