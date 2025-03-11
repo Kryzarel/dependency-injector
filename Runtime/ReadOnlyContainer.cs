@@ -131,7 +131,7 @@ namespace Kryz.DI
 		{
 			if (!objects.TryGetValue(type, out object obj))
 			{
-				obj = CreateAndInjectObject(resolvedType);
+				objects[type] = obj = CreateAndInjectObject(resolvedType);
 			}
 			return obj;
 		}
