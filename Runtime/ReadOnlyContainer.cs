@@ -1,34 +1,36 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Kryz.Collections;
 using Kryz.DI.Exceptions;
 
 namespace Kryz.DI
 {
-	public class ReadOnlyContainer : IContainer, IDisposable
+	public class ReadOnlyContainer : IContainer
 	{
-		public readonly ReadOnlyContainer? Parent;
-		public readonly IInjector Injector;
-
 		private readonly Dictionary<Type, object> objects;
 		private readonly IReadOnlyDictionary<Type, Registration> registrations;
+		private readonly PooledList<ReadOnlyContainer> childScopes;
 
-		IContainer? IContainer.Parent => Parent;
+		public readonly IInjector Injector;
+		public readonly ReadOnlyContainer? Parent;
+		public readonly IReadOnlyList<ReadOnlyContainer> ChildScopes;
+
 		IInjector IContainer.Injector => Injector;
+		IContainer? IContainer.Parent => Parent;
+		IReadOnlyList<IContainer> IContainer.ChildScopes => ChildScopes;
 
 		internal ReadOnlyContainer(IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
 		{
 			Injector = injector;
 			this.objects = objects;
 			this.registrations = registrations;
+			ChildScopes = childScopes = new PooledList<ReadOnlyContainer>();
 		}
 
-		internal ReadOnlyContainer(ReadOnlyContainer parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
+		internal ReadOnlyContainer(ReadOnlyContainer parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
 		{
 			Parent = parent;
-			Injector = parent.Injector;
-			this.objects = objects;
-			this.registrations = registrations;
 		}
 
 		public T GetObject<T>()
@@ -86,7 +88,7 @@ namespace Kryz.DI
 						Lifetime.Singleton => container.GetOrCreateObject(type, registration.Type),
 						Lifetime.Scoped => GetOrCreateObject(type, registration.Type),
 						Lifetime.Transient => CreateAndInjectObject(registration.Type),
-						_ => throw new NotImplementedException(),
+						_ => throw new NotImplementedException($"No implementation for {nameof(Lifetime)}.{registration.Lifetime}"),
 					};
 					return true;
 				}
@@ -96,9 +98,9 @@ namespace Kryz.DI
 			return false;
 		}
 
-		public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type type)
+		public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
-			return TryGetType(typeof(T), out type);
+			return TryGetType(typeof(T), out resolvedType);
 		}
 
 		public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
@@ -115,8 +117,26 @@ namespace Kryz.DI
 			return false;
 		}
 
+		public IContainer CreateScope()
+		{
+			ReadOnlyContainer container = new Builder(this).Build_Internal();
+			childScopes.Add(container);
+			return container;
+		}
+
+		public IContainer CreateScope(IContainer.BuilderDelegate build)
+		{
+			Builder builder = new(this);
+			build(ref builder);
+			ReadOnlyContainer container = builder.Build_Internal();
+			childScopes.Add(container);
+			return container;
+		}
+
 		public void Dispose()
 		{
+			Parent?.RemoveScope(this);
+
 			foreach (object item in objects.Values)
 			{
 				if (item is IDisposable disposable)
@@ -124,11 +144,26 @@ namespace Kryz.DI
 					disposable.Dispose();
 				}
 			}
+			objects.Clear();
 		}
 
 		~ReadOnlyContainer()
 		{
 			Dispose();
+		}
+
+		private bool RemoveScope(IContainer child)
+		{
+			for (int i = 0; i < childScopes.Count; i++)
+			{
+				ReadOnlyContainer container = childScopes[i];
+				if (container == child)
+				{
+					childScopes.RemoveAt(i);
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private object GetOrCreateObject(Type type, Type resolvedType)

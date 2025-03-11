@@ -6,11 +6,12 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public ref struct Builder
+	public struct Builder
 	{
 		private readonly ReadOnlyContainer? parent;
 		private readonly Dictionary<Type, object> objects;
 		private readonly Dictionary<Type, Registration> registrations;
+
 		private bool hasBuilt;
 
 		public Builder(ReadOnlyContainer? parent = null)
@@ -32,7 +33,7 @@ namespace Kryz.DI
 			return this;
 		}
 
-		public readonly Builder RegisterInstance<T>(T obj) where T : notnull
+		public readonly Builder Register<T>(T obj) where T : notnull
 		{
 			objects[typeof(T)] = obj;
 			registrations[typeof(T)] = new Registration(obj.GetType(), Lifetime.Singleton);
@@ -40,6 +41,11 @@ namespace Kryz.DI
 		}
 
 		public IContainer Build()
+		{
+			return Build_Internal();
+		}
+
+		internal ReadOnlyContainer Build_Internal()
 		{
 			if (hasBuilt)
 			{
@@ -51,10 +57,9 @@ namespace Kryz.DI
 			ReadOnlyContainer container = parent != null ? new ReadOnlyContainer(parent, registrations, objects) : new ReadOnlyContainer(injector, registrations, objects);
 
 			// Register the Container itself
-			RegisterInstance<IContainer>(container);
-			RegisterInstance<IResolver>(container);
-			RegisterInstance<IObjectResolver>(container);
-			RegisterInstance<ITypeResolver>(container);
+			Register<IContainer>(container);
+			Register<IObjectResolver>(container);
+			Register<ITypeResolver>(container);
 
 			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, registrations.Keys);
 			if (data.MissingDependencies != null && data.MissingDependencies.Count > 0)

@@ -1,8 +1,17 @@
+using System;
+using System.Collections.Generic;
+
 namespace Kryz.DI
 {
-	public interface IContainer : IResolver
+	public interface IContainer : IObjectResolver, ITypeResolver, IDisposable
 	{
-		IContainer? Parent { get; }
 		IInjector Injector { get; }
+		IContainer? Parent { get; }
+		IReadOnlyList<IContainer> ChildScopes { get; }
+
+		IContainer CreateScope();
+		IContainer CreateScope(BuilderDelegate build);
+
+		delegate void BuilderDelegate(ref Builder builder);
 	}
 }

@@ -18,7 +18,7 @@ namespace Kryz.DI.Reflection
 			paramCache[0] = Array.Empty<object>();
 		}
 
-		public object CreateObject(Type type, IResolver typeResolver)
+		public object CreateObject(Type type, IObjectResolver resolver)
 		{
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
 
@@ -29,7 +29,7 @@ namespace Kryz.DI.Reflection
 				for (int i = 0; i < paramLength; i++)
 				{
 					Type item = info.ConstructorParams[i];
-					constructorParams[i] = typeResolver.GetObject(item);
+					constructorParams[i] = resolver.GetObject(item);
 				}
 				object obj = info.Constructor.Invoke(constructorParams);
 				ReturnToParamCache(constructorParams);
@@ -42,7 +42,7 @@ namespace Kryz.DI.Reflection
 			throw new AbstractTypeException($"Can't create object of type {type.FullName} because it is abstract.");
 		}
 
-		public void Inject(object obj, IResolver typeResolver)
+		public void Inject(object obj, IObjectResolver resolver)
 		{
 			Type type = obj.GetType();
 			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
@@ -50,13 +50,13 @@ namespace Kryz.DI.Reflection
 			for (int i = 0; i < info.Fields.Count; i++)
 			{
 				FieldInfo item = info.Fields[i];
-				item.SetValue(obj, typeResolver.GetObject(item.FieldType));
+				item.SetValue(obj, resolver.GetObject(item.FieldType));
 			}
 
 			for (int i = 0; i < info.Properties.Count; i++)
 			{
 				PropertyInfo item = info.Properties[i];
-				item.SetValue(obj, typeResolver.GetObject(item.PropertyType));
+				item.SetValue(obj, resolver.GetObject(item.PropertyType));
 			}
 
 			for (int i = 0; i < info.Methods.Count; i++)
@@ -67,7 +67,7 @@ namespace Kryz.DI.Reflection
 				object[] methodParams = GetFromParamCache(paramTypes.Count);
 				for (int j = 0; j < methodParams.Length; j++)
 				{
-					methodParams[j] = typeResolver.GetObject(paramTypes[j]);
+					methodParams[j] = resolver.GetObject(paramTypes[j]);
 				}
 				item.Invoke(obj, methodParams);
 				ReturnToParamCache(methodParams);

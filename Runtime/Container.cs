@@ -6,7 +6,7 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public class Container : IResolver
+	public class Container : IObjectResolver, ITypeResolver
 	{
 		private readonly struct Registration
 		{
