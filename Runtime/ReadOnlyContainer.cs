@@ -1,16 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Kryz.DI.Exceptions;
 
 namespace Kryz.DI
 {
-	public class ReadOnlyContainer : IResolver, IDisposable
+	public class ReadOnlyContainer : IContainer, IDisposable
 	{
 		public readonly ReadOnlyContainer? Parent;
 		public readonly IInjector Injector;
 
 		private readonly Dictionary<Type, object> objects;
 		private readonly IReadOnlyDictionary<Type, Registration> registrations;
+
+		IContainer? IContainer.Parent => Parent;
+		IInjector IContainer.Injector => Injector;
 
 		internal ReadOnlyContainer(IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
 		{

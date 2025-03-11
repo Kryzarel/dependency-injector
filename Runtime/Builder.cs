@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kryz.DI.Exceptions;
 using Kryz.DI.Reflection;
 
 namespace Kryz.DI
@@ -25,25 +26,20 @@ namespace Kryz.DI
 			return Register<T, T>(lifetime);
 		}
 
-		public readonly Builder RegisterInstance<T>(T obj) where T : notnull
-		{
-			return RegisterInstance<T, T>(obj);
-		}
-
 		public readonly Builder Register<TBase, TDerived>(Lifetime lifetime) where TDerived : TBase
 		{
 			registrations[typeof(TBase)] = new Registration(typeof(TDerived), lifetime);
 			return this;
 		}
 
-		public readonly Builder RegisterInstance<TBase, TDerived>(TDerived obj) where TDerived : notnull, TBase
+		public readonly Builder RegisterInstance<T>(T obj) where T : notnull
 		{
-			objects[typeof(TBase)] = obj;
-			registrations[typeof(TBase)] = new Registration(typeof(TDerived), Lifetime.Singleton);
+			objects[typeof(T)] = obj;
+			registrations[typeof(T)] = new Registration(obj.GetType(), Lifetime.Singleton);
 			return this;
 		}
 
-		public ReadOnlyContainer Build()
+		public IContainer Build()
 		{
 			if (hasBuilt)
 			{
@@ -53,7 +49,12 @@ namespace Kryz.DI
 			hasBuilt = true;
 			IInjector injector = parent?.Injector ?? new ReflectionInjector();
 			ReadOnlyContainer container = parent != null ? new ReadOnlyContainer(parent, registrations, objects) : new ReadOnlyContainer(injector, registrations, objects);
-			RegisterInstance<IResolver>(container); // Register the Container itself as IResolver
+
+			// Register the Container itself
+			RegisterInstance<IContainer>(container);
+			RegisterInstance<IResolver>(container);
+			RegisterInstance<IObjectResolver>(container);
+			RegisterInstance<ITypeResolver>(container);
 
 			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, registrations.Keys);
 			if (data.MissingDependencies != null && data.MissingDependencies.Count > 0)

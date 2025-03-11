@@ -1,6 +1,6 @@
 using System;
 
-namespace Kryz.DI
+namespace Kryz.DI.Exceptions
 {
 	public class CircularDependencyException : Exception
 	{

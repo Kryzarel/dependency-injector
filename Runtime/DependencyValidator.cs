@@ -19,7 +19,7 @@ namespace Kryz.DI
 			}
 		}
 
-		public static Data Validate<T>(IResolver resolver, IInjector injector, T types) where T : IEnumerable<Type>
+		public static Data Validate<T>(ITypeResolver resolver, IInjector injector, T types) where T : IEnumerable<Type>
 		{
 			NonAllocList<Type> visitedTypes = new();
 			Dictionary<Type, IReadOnlyList<Type>>? missing = null;
@@ -45,7 +45,7 @@ namespace Kryz.DI
 			return new Data(missing, circular);
 		}
 
-		public static bool HasMissingDependency(Type type, IResolver resolver, IInjector injector, out IReadOnlyList<Type> missing)
+		public static bool HasMissingDependency(Type type, ITypeResolver resolver, IInjector injector, out IReadOnlyList<Type> missing)
 		{
 			List<Type>? missingTypes = null;
 
@@ -64,7 +64,7 @@ namespace Kryz.DI
 			return missing.Count > 0;
 		}
 
-		public static bool HasCircularDependency<TList>(Type type, IResolver resolver, IInjector injector, ref TList visitedTypes) where TList : IList<Type>
+		public static bool HasCircularDependency<TList>(Type type, ITypeResolver resolver, IInjector injector, ref TList visitedTypes) where TList : IList<Type>
 		{
 			if (visitedTypes.Contains(type))
 			{

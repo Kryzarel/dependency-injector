@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Kryz.DI.Exceptions;
 using Kryz.DI.Reflection;
 
 namespace Kryz.DI

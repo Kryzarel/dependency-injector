@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
+using Kryz.DI.Exceptions;
 
 namespace Kryz.DI.Reflection
 {

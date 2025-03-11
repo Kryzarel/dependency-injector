@@ -1,4 +1,5 @@
 using System;
+using Kryz.DI.Exceptions;
 using NUnit.Framework;
 using static Kryz.DI.Tests.ContainerTestHelper;
 
