@@ -1,6 +1,6 @@
 using System;
 
-namespace Kryz.DI
+namespace Kryz.DI.Internal
 {
 	internal readonly struct Registration
 	{

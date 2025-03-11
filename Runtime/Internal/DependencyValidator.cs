@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using Kryz.Collections;
 using Kryz.Utils;
 
-namespace Kryz.DI
+namespace Kryz.DI.Internal
 {
-	public static class DependencyValidator
+	internal static class DependencyValidator
 	{
 		public readonly struct Data
 		{

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kryz.DI.Exceptions;
+using Kryz.DI.Internal;
 using Kryz.DI.Reflection;
 
 namespace Kryz.DI
