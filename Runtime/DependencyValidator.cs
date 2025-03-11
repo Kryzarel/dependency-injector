@@ -45,7 +45,7 @@ namespace Kryz.DI
 			return new Data(missing, circular);
 		}
 
-		private static bool HasMissingDependency(Type type, IResolver resolver, IInjector injector, out IReadOnlyList<Type> missing)
+		public static bool HasMissingDependency(Type type, IResolver resolver, IInjector injector, out IReadOnlyList<Type> missing)
 		{
 			List<Type>? missingTypes = null;
 
@@ -64,7 +64,7 @@ namespace Kryz.DI
 			return missing.Count > 0;
 		}
 
-		private static bool HasCircularDependency<TList>(Type type, IResolver resolver, IInjector injector, ref TList visitedTypes) where TList : IList<Type>
+		public static bool HasCircularDependency<TList>(Type type, IResolver resolver, IInjector injector, ref TList visitedTypes) where TList : IList<Type>
 		{
 			if (visitedTypes.Contains(type))
 			{
