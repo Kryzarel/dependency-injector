@@ -10,8 +10,6 @@ namespace Kryz.DI
 		IReadOnlyList<IContainer> ChildScopes { get; }
 
 		IContainer CreateScope();
-		IContainer CreateScope(BuilderDelegate build);
-
-		delegate void BuilderDelegate(ref Builder builder);
+		IContainer CreateScope(Action<Builder> build);
 	}
 }

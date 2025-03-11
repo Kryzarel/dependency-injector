@@ -2,6 +2,6 @@ namespace Kryz.DI
 {
 	public static class DependencyInjector
 	{
-		public static readonly Container RootContainer = new();
+		public static readonly IContainer RootContainer = new Builder().Build_Internal();
 	}
 }

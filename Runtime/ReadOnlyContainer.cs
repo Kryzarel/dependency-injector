@@ -124,10 +124,10 @@ namespace Kryz.DI
 			return container;
 		}
 
-		public IContainer CreateScope(IContainer.BuilderDelegate build)
+		public IContainer CreateScope(Action<Builder> build)
 		{
 			Builder builder = new(this);
-			build(ref builder);
+			build(builder);
 			ReadOnlyContainer container = builder.Build_Internal();
 			childScopes.Add(container);
 			return container;

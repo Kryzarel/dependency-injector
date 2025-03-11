@@ -1,33 +1,24 @@
-using System;
-
 namespace Kryz.DI.Tests
 {
 	public static class ContainerTestHelper
 	{
-		public enum RegisterType { Singleton, Scoped, Transient }
-
-		public static Container Add<TBase, TDerived>(Container container, RegisterType registerType) where TDerived : TBase
+		public static IContainer SetupContainer(Lifetime lifetime)
 		{
-			return registerType switch
-			{
-				RegisterType.Singleton => container.AddSingleton<TBase, TDerived>(),
-				RegisterType.Scoped => container.AddScoped<TBase, TDerived>(),
-				RegisterType.Transient => container.AddTransient<TBase, TDerived>(),
-				_ => throw new NotImplementedException(),
-			};
+			Builder builder = new();
+			Register(builder, lifetime);
+			return builder.Build();
 		}
 
-		public static Container SetupContainer(Container container, RegisterType registerType)
+		public static void Register(Builder builder, Lifetime lifetime)
 		{
-			Add<Empty, Empty>(container, registerType);
-			Add<IA, A>(container, registerType);
-			Add<IB, B>(container, registerType);
-			Add<IC, C>(container, registerType);
-			Add<ID, D>(container, registerType);
-			Add<IE, E>(container, registerType);
-			Add<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>(container, registerType);
-			Add<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>(container, registerType);
-			return container;
+			builder.Register<Empty, Empty>(lifetime);
+			builder.Register<IA, A>(lifetime);
+			builder.Register<IB, B>(lifetime);
+			builder.Register<IC, C>(lifetime);
+			builder.Register<ID, D>(lifetime);
+			builder.Register<IE, E>(lifetime);
+			builder.Register<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>(lifetime);
+			builder.Register<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>(lifetime);
 		}
 	}
 }

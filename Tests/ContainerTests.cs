@@ -7,41 +7,24 @@ namespace Kryz.DI.Tests
 {
 	public class ContainerTests
 	{
-		private static void GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2)
+		private static void GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2)
 		{
-			root = new Container();
+			root = new Builder().Build();
 
-			child1 = root.CreateChild();
-			child2 = root.CreateChild();
+			child1 = root.CreateScope();
+			child2 = root.CreateScope();
 
-			child1_child1 = child1.CreateChild();
-			child1_child2 = child1.CreateChild();
+			child1_child1 = child1.CreateScope();
+			child1_child2 = child1.CreateScope();
 
-			child2_child1 = child2.CreateChild();
-			child2_child2 = child2.CreateChild();
-		}
-
-		[Test]
-		public void TestRoot()
-		{
-			GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2);
-
-			Assert.AreEqual(root, root.Root);
-
-			Assert.AreEqual(root, child1.Root);
-			Assert.AreEqual(root, child2.Root);
-
-			Assert.AreEqual(root, child1_child1.Root);
-			Assert.AreEqual(root, child1_child2.Root);
-
-			Assert.AreEqual(root, child2_child1.Root);
-			Assert.AreEqual(root, child2_child2.Root);
+			child2_child1 = child2.CreateScope();
+			child2_child2 = child2.CreateScope();
 		}
 
 		[Test]
 		public void TestParent()
 		{
-			GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2);
+			GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2);
 
 			Assert.AreEqual(root, child1.Parent);
 			Assert.AreEqual(root, child2.Parent);
@@ -56,19 +39,19 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestChildren()
 		{
-			GetContainerWithChildren(out Container root, out Container child1, out Container child2, out Container child1_child1, out Container child1_child2, out Container child2_child1, out Container child2_child2);
+			GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2);
 
-			Assert.AreEqual(root.Children[0], child1);
-			Assert.AreEqual(root.Children[1], child2);
+			Assert.AreEqual(root.ChildScopes[0], child1);
+			Assert.AreEqual(root.ChildScopes[1], child2);
 
-			Assert.AreEqual(child1.Children[0], child1_child1);
-			Assert.AreEqual(child1.Children[1], child1_child2);
+			Assert.AreEqual(child1.ChildScopes[0], child1_child1);
+			Assert.AreEqual(child1.ChildScopes[1], child1_child2);
 
-			Assert.AreEqual(child2.Children[0], child2_child1);
-			Assert.AreEqual(child2.Children[1], child2_child2);
+			Assert.AreEqual(child2.ChildScopes[0], child2_child1);
+			Assert.AreEqual(child2.ChildScopes[1], child2_child2);
 		}
 
-		private static void HasRegistrations(Container container)
+		private static void HasRegistrations(IContainer container)
 		{
 			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
 			Assert.AreEqual(typeof(A), container.GetType<IA>());
@@ -82,7 +65,7 @@ namespace Kryz.DI.Tests
 			Assert.Throws<InjectionException>(() => container.GetObject<A>());
 		}
 
-		private static void DoesNotHaveRegistrations(Container container)
+		private static void DoesNotHaveRegistrations(IContainer container)
 		{
 			Assert.IsFalse(container.TryGetType<Empty>(out _));
 			Assert.IsFalse(container.TryGetType<IA>(out _));
@@ -100,7 +83,7 @@ namespace Kryz.DI.Tests
 			Assert.Throws<InjectionException>(() => container.GetObject<A>());
 		}
 
-		private static void HasObjects(Container container)
+		private static void HasObjects(IContainer container)
 		{
 			Assert.IsTrue(container.GetObject<IA>() is A);
 			Assert.IsTrue(container.GetObject<IB>() is B);
@@ -111,7 +94,7 @@ namespace Kryz.DI.Tests
 			Assert.IsTrue(container.GetObject<IGeneric<ID, IE, Empty>>() is Generic<ID, IE, Empty>);
 		}
 
-		private static void DoesNotHaveObjects(Container container)
+		private static void DoesNotHaveObjects(IContainer container)
 		{
 			Assert.IsFalse(container.TryGetObject<IA>(out _));
 			Assert.IsFalse(container.TryGetObject<IB>(out _));
@@ -127,7 +110,7 @@ namespace Kryz.DI.Tests
 			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2NoInject>());
 		}
 
-		private static void TestObjectEquality(Container container, bool areEqual)
+		private static void TestObjectEquality(IContainer container, bool areEqual)
 		{
 			Action<object?, object?> assertEquality = areEqual ? Assert.AreEqual : Assert.AreNotEqual;
 
@@ -152,16 +135,7 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestRegistrations()
 		{
-			Container container = new();
-
-			container.AddScoped<Empty, Empty>();
-			container.AddScoped<IA, A>();
-			container.AddScoped<IB, B>();
-			container.AddScoped<IC, C>();
-			container.AddScoped<ID, D>();
-			container.AddScoped<IE, E>();
-			container.AddScoped<IGeneric<IA, IB, IC>, Generic<IA, IB, IC>>();
-			container.AddScoped<IGeneric<ID, IE, Empty>, Generic<ID, IE, Empty>>();
+			IContainer container = SetupContainer(Lifetime.Scoped);
 
 			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
 			Assert.AreEqual(typeof(A), container.GetType<IA>());
@@ -172,81 +146,68 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(typeof(Generic<IA, IB, IC>), container.GetType<IGeneric<IA, IB, IC>>());
 			Assert.AreEqual(typeof(Generic<ID, IE, Empty>), container.GetType<IGeneric<ID, IE, Empty>>());
 
-			Assert.Throws<CircularDependencyException>(() => container.AddScoped<ICircular1, Circular1>());
-			Assert.Throws<CircularDependencyException>(() => container.AddScoped<ICircular2, Circular2>());
+			Assert.Throws<CircularDependencyException>(() => new Builder().Register<ICircular1, Circular1>(Lifetime.Singleton).Build());
+			Assert.Throws<CircularDependencyException>(() => new Builder().Register<ICircular2, Circular2>(Lifetime.Singleton).Build());
 
-			// This one will still be added because it's only possible to detect the circular dependency when 'ICircular2NoInject' is registered
-			container.AddScoped<ICircular1NoInject, Circular1NoInject>();
-			Assert.AreEqual(typeof(Circular1NoInject), container.GetType<ICircular1NoInject>());
+			Assert.Throws<MissingDependencyException>(() => new Builder().Register<ICircular1NoInject, Circular1NoInject>(Lifetime.Singleton).Build());
 
-			Assert.Throws<CircularDependencyException>(() => container.AddScoped<ICircular2NoInject, Circular2NoInject>());
-
-			Container child = container.CreateChild();
-			Assert.Throws<CircularDependencyException>(() => child.AddScoped<ICircular2NoInject, Circular2NoInject>());
+			Builder builder = new();
+			builder.Register<ICircular1NoInject, Circular1NoInject>(Lifetime.Singleton);
+			builder.Register<ICircular2NoInject, Circular2NoInject>(Lifetime.Singleton);
+			Assert.Throws<CircularDependencyException>(() => builder.Build());
 		}
 
 		[Test]
 		public void TestSingleton()
 		{
-			Container root = new();
+			IContainer empty = new Builder().Build();
+			DoesNotHaveRegistrations(empty);
+			DoesNotHaveObjects(empty);
 
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			SetupContainer(root, RegisterType.Singleton);
-
-			HasRegistrations(root);
-			HasObjects(root);
-			TestObjectEquality(root, areEqual: true);
+			IContainer container = SetupContainer(Lifetime.Singleton);
+			HasRegistrations(container);
+			HasObjects(container);
+			TestObjectEquality(container, areEqual: true);
 		}
 
 		[Test]
 		public void TestScoped()
 		{
-			Container root = new();
+			IContainer empty = new Builder().Build();
+			DoesNotHaveRegistrations(empty);
+			DoesNotHaveObjects(empty);
 
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			SetupContainer(root, RegisterType.Scoped);
-
-			HasRegistrations(root);
-			HasObjects(root);
-			TestObjectEquality(root, areEqual: true);
+			IContainer container = SetupContainer(Lifetime.Scoped);
+			HasRegistrations(container);
+			HasObjects(container);
+			TestObjectEquality(container, areEqual: true);
 		}
 
 		[Test]
 		public void TestTransient()
 		{
-			Container root = new();
+			IContainer empty = new Builder().Build();
+			DoesNotHaveRegistrations(empty);
+			DoesNotHaveObjects(empty);
 
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			SetupContainer(root, RegisterType.Transient);
-
-			HasRegistrations(root);
-			HasObjects(root);
-			TestObjectEquality(root, areEqual: false);
+			IContainer container = SetupContainer(Lifetime.Transient);
+			HasRegistrations(container);
+			HasObjects(container);
+			TestObjectEquality(container, areEqual: false);
 		}
 
 		[Test]
 		public void TestSingletonChild()
 		{
-			Container root = new();
-			Container child = root.CreateChild();
+			IContainer root = new Builder().Build();
 
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
 
-			DoesNotHaveRegistrations(child);
-			DoesNotHaveObjects(child);
+			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Singleton));
 
-			SetupContainer(child, RegisterType.Singleton);
-
-			HasRegistrations(root);
-			HasObjects(root);
-			TestObjectEquality(root, areEqual: true);
+			DoesNotHaveRegistrations(root);
+			DoesNotHaveObjects(root);
 
 			HasRegistrations(child);
 			HasObjects(child);
@@ -256,16 +217,12 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestScopedChild()
 		{
-			Container root = new();
-			Container child = root.CreateChild();
+			IContainer root = new Builder().Build();
 
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
 
-			DoesNotHaveRegistrations(child);
-			DoesNotHaveObjects(child);
-
-			SetupContainer(child, RegisterType.Scoped);
+			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Scoped));
 
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
@@ -278,16 +235,12 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestTransientChild()
 		{
-			Container root = new();
-			Container child = root.CreateChild();
+			IContainer root = new Builder().Build();
 
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
 
-			DoesNotHaveRegistrations(child);
-			DoesNotHaveObjects(child);
-
-			SetupContainer(child, RegisterType.Transient);
+			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Transient));
 
 			DoesNotHaveRegistrations(root);
 			DoesNotHaveObjects(root);
@@ -300,47 +253,36 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestAddObject()
 		{
-			Container root = new();
+			IContainer empty = new Builder().Build();
 
-			Assert.IsFalse(root.TryGetType<Empty>(out _));
-			Assert.IsFalse(root.TryGetObject<Empty>(out _));
-			Assert.Throws<InjectionException>(() => root.GetType<Empty>());
-			Assert.Throws<InjectionException>(() => root.GetObject<Empty>());
+			Assert.IsFalse(empty.TryGetType<Empty>(out _));
+			Assert.IsFalse(empty.TryGetObject<Empty>(out _));
+			Assert.Throws<InjectionException>(() => empty.GetType<Empty>());
+			Assert.Throws<InjectionException>(() => empty.GetObject<Empty>());
 
-			Empty empty = new();
-			root.AddScoped(empty);
+			Empty emptyObj = new();
+			IContainer container = new Builder().Register(emptyObj).Build();
 
-			Assert.IsTrue(root.TryGetType<Empty>(out _));
-			Assert.IsTrue(root.TryGetObject<Empty>(out _));
-			Assert.AreEqual(typeof(Empty), root.GetType<Empty>());
-			Assert.AreEqual(empty, root.GetObject<Empty>());
+			Assert.IsTrue(container.TryGetType<Empty>(out _));
+			Assert.IsTrue(container.TryGetObject<Empty>(out _));
+			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
+			Assert.AreEqual(emptyObj, container.GetObject<Empty>());
 		}
 
 		[Test]
 		public void TestInject()
 		{
-			Container root = new();
-			Container child = root.CreateChild();
-
-			SetupContainer(child, RegisterType.Scoped);
+			IContainer root = new Builder().Build();
+			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Singleton));
 
 			{
 				Generic<IA, IB, IC> generic = new();
-				Assert.Throws<InjectionException>(() => root.Inject(generic));
-				child.Inject(generic);
+				Assert.Throws<InjectionException>(() => root.Injector.Inject(generic, root));
+
+				child.Injector.Inject(generic, child);
 				Assert.AreEqual(child.GetObject<IA>(), generic.One);
 				Assert.AreEqual(child.GetObject<IB>(), generic.Two);
 				Assert.AreEqual(child.GetObject<IC>(), generic.Three);
-			}
-
-			SetupContainer(child, RegisterType.Singleton);
-
-			{
-				Generic<IA, IB, IC> generic = new();
-				root.Inject(generic);
-				Assert.AreEqual(root.GetObject<IA>(), generic.One);
-				Assert.AreEqual(root.GetObject<IB>(), generic.Two);
-				Assert.AreEqual(root.GetObject<IC>(), generic.Three);
 			}
 		}
 
@@ -354,27 +296,23 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestInstantiate()
 		{
-			Container root = new();
-			Container child = root.CreateChild();
-			Container child2 = child.CreateChild();
-
-			root.AddScoped<InstanceCounter, InstanceCounter>();
-			child.AddScoped<InstanceCounter, InstanceCounter>();
-			child2.AddTransient<InstanceCounter, InstanceCounter>();
+			IContainer root = new Builder().Register<InstanceCounter>(Lifetime.Scoped).Build();
+			IContainer child = root.CreateScope();
+			IContainer child2 = child.CreateScope(builder => builder.Register<InstanceCounter>(Lifetime.Transient));
 
 			int startingCount = InstanceCounter.Count;
 
-			root.Instantiate();
+			root.TryGetObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
 			Assert.IsTrue(root.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
 
-			child.Instantiate();
+			child.TryGetObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
 			Assert.IsTrue(child.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
 
-			child2.Instantiate();
+			child2.TryGetObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
 			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 3, InstanceCounter.Count);

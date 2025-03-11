@@ -6,34 +6,35 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public struct Builder
+	public class Builder
 	{
 		private readonly ReadOnlyContainer? parent;
-		private readonly Dictionary<Type, object> objects;
-		private readonly Dictionary<Type, Registration> registrations;
+		private readonly Dictionary<Type, object> objects = new();
+		private readonly Dictionary<Type, Registration> registrations = new();
 
-		private bool hasBuilt;
+		private ReadOnlyContainer? container;
 
-		public Builder(ReadOnlyContainer? parent = null)
+		internal Builder(ReadOnlyContainer parent)
 		{
 			this.parent = parent;
-			objects = new Dictionary<Type, object>();
-			registrations = new Dictionary<Type, Registration>();
-			hasBuilt = false;
 		}
 
-		public readonly Builder Register<T>(Lifetime lifetime)
+		public Builder()
+		{
+		}
+
+		public Builder Register<T>(Lifetime lifetime)
 		{
 			return Register<T, T>(lifetime);
 		}
 
-		public readonly Builder Register<TBase, TDerived>(Lifetime lifetime) where TDerived : TBase
+		public Builder Register<TBase, TDerived>(Lifetime lifetime) where TDerived : TBase
 		{
 			registrations[typeof(TBase)] = new Registration(typeof(TDerived), lifetime);
 			return this;
 		}
 
-		public readonly Builder Register<T>(T obj) where T : notnull
+		public Builder Register<T>(T obj) where T : notnull
 		{
 			objects[typeof(T)] = obj;
 			registrations[typeof(T)] = new Registration(obj.GetType(), Lifetime.Singleton);
@@ -47,14 +48,13 @@ namespace Kryz.DI
 
 		internal ReadOnlyContainer Build_Internal()
 		{
-			if (hasBuilt)
+			if (container != null)
 			{
 				throw new InvalidOperationException($"Can't build from the same {nameof(Builder)} more than once.");
 			}
 
-			hasBuilt = true;
 			IInjector injector = parent?.Injector ?? new ReflectionInjector();
-			ReadOnlyContainer container = parent != null ? new ReadOnlyContainer(parent, registrations, objects) : new ReadOnlyContainer(injector, registrations, objects);
+			container = parent != null ? new ReadOnlyContainer(parent, registrations, objects) : new ReadOnlyContainer(injector, registrations, objects);
 
 			// Register the Container itself
 			Register<IContainer>(container);
