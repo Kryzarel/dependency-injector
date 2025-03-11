@@ -6,29 +6,29 @@ using Kryz.DI.Exceptions;
 
 namespace Kryz.DI
 {
-	public class ReadOnlyContainer : IContainer
+	public class Container : IContainer
 	{
 		private readonly Dictionary<Type, object> objects;
 		private readonly IReadOnlyDictionary<Type, Registration> registrations;
-		private readonly PooledList<ReadOnlyContainer> childScopes;
+		private readonly PooledList<Container> childScopes;
 
 		public readonly IInjector Injector;
-		public readonly ReadOnlyContainer? Parent;
-		public readonly IReadOnlyList<ReadOnlyContainer> ChildScopes;
+		public readonly Container? Parent;
+		public readonly IReadOnlyList<Container> ChildScopes;
 
 		IInjector IContainer.Injector => Injector;
 		IContainer? IContainer.Parent => Parent;
 		IReadOnlyList<IContainer> IContainer.ChildScopes => ChildScopes;
 
-		internal ReadOnlyContainer(IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
+		internal Container(IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
 		{
 			Injector = injector;
 			this.objects = objects;
 			this.registrations = registrations;
-			ChildScopes = childScopes = new PooledList<ReadOnlyContainer>();
+			ChildScopes = childScopes = new PooledList<Container>();
 		}
 
-		internal ReadOnlyContainer(ReadOnlyContainer parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
+		internal Container(Container parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
 		{
 			Parent = parent;
 		}
@@ -79,7 +79,7 @@ namespace Kryz.DI
 				return true;
 			}
 
-			for (ReadOnlyContainer? container = this; container != null; container = container.Parent)
+			for (Container? container = this; container != null; container = container.Parent)
 			{
 				if (container.registrations.TryGetValue(type, out Registration registration))
 				{
@@ -105,7 +105,7 @@ namespace Kryz.DI
 
 		public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
-			for (ReadOnlyContainer? container = this; container != null; container = container.Parent)
+			for (Container? container = this; container != null; container = container.Parent)
 			{
 				if (container.registrations.TryGetValue(type, out Registration registration))
 				{
@@ -119,7 +119,7 @@ namespace Kryz.DI
 
 		public IContainer CreateScope()
 		{
-			ReadOnlyContainer container = new Builder(this).Build_Internal();
+			Container container = new Builder(this).Build_Internal();
 			childScopes.Add(container);
 			return container;
 		}
@@ -128,7 +128,7 @@ namespace Kryz.DI
 		{
 			Builder builder = new(this);
 			build(builder);
-			ReadOnlyContainer container = builder.Build_Internal();
+			Container container = builder.Build_Internal();
 			childScopes.Add(container);
 			return container;
 		}
@@ -147,7 +147,7 @@ namespace Kryz.DI
 			objects.Clear();
 		}
 
-		~ReadOnlyContainer()
+		~Container()
 		{
 			Dispose();
 		}
@@ -156,7 +156,7 @@ namespace Kryz.DI
 		{
 			for (int i = 0; i < childScopes.Count; i++)
 			{
-				ReadOnlyContainer container = childScopes[i];
+				Container container = childScopes[i];
 				if (container == child)
 				{
 					childScopes.RemoveAt(i);

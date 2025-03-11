@@ -8,13 +8,13 @@ namespace Kryz.DI
 {
 	public class Builder
 	{
-		private readonly ReadOnlyContainer? parent;
+		private readonly Container? parent;
 		private readonly Dictionary<Type, object> objects = new();
 		private readonly Dictionary<Type, Registration> registrations = new();
 
-		private ReadOnlyContainer? container;
+		private Container? container;
 
-		internal Builder(ReadOnlyContainer parent)
+		internal Builder(Container parent)
 		{
 			this.parent = parent;
 		}
@@ -46,7 +46,7 @@ namespace Kryz.DI
 			return Build_Internal();
 		}
 
-		internal ReadOnlyContainer Build_Internal()
+		internal Container Build_Internal()
 		{
 			if (container != null)
 			{
@@ -54,7 +54,7 @@ namespace Kryz.DI
 			}
 
 			IInjector injector = parent?.Injector ?? new ReflectionInjector();
-			container = parent != null ? new ReadOnlyContainer(parent, registrations, objects) : new ReadOnlyContainer(injector, registrations, objects);
+			container = parent != null ? new Container(parent, registrations, objects) : new Container(injector, registrations, objects);
 
 			// Register the Container itself
 			Register<IContainer>(container);
