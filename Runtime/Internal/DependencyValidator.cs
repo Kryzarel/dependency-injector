@@ -85,6 +85,8 @@ namespace Kryz.DI.Internal
 					}
 				}
 			}
+
+			visitedTypes.RemoveAt(visitedTypes.Count - 1);
 			return false;
 		}
 	}
