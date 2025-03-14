@@ -21,7 +21,7 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(reflectionCache.Get(typeof(B)), reflectionCache.Get(typeof(B)));
 			Assert.AreEqual(reflectionCache.Get(typeof(C)), reflectionCache.Get(typeof(C)));
 			Assert.AreEqual(reflectionCache.Get(typeof(D)), reflectionCache.Get(typeof(D)));
-			Assert.AreEqual(reflectionCache.Get(typeof(Empty)), reflectionCache.Get(typeof(Empty)));
+			Assert.AreEqual(reflectionCache.Get(typeof(EmptyClass)), reflectionCache.Get(typeof(EmptyClass)));
 			Assert.AreEqual(reflectionCache.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
 
 			ReflectionCache reflectionCache2 = new();
@@ -33,7 +33,7 @@ namespace Kryz.DI.Tests
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(B)), reflectionCache.Get(typeof(B)));
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(C)), reflectionCache.Get(typeof(C)));
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(D)), reflectionCache.Get(typeof(D)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(Empty)), reflectionCache.Get(typeof(Empty)));
+			Assert.AreNotEqual(reflectionCache2.Get(typeof(EmptyClass)), reflectionCache.Get(typeof(EmptyClass)));
 			Assert.AreNotEqual(reflectionCache2.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
 		}
 
@@ -60,14 +60,14 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestInfoEmpty()
 		{
-			ReflectionCache.InjectionInfo info = TestTypeInfo<Empty>(
+			ReflectionCache.InjectionInfo info = TestTypeInfo<EmptyClass>(
 				hasConstructor: true,
 				numConstructorParams: 0,
 				numFields: 0,
 				numProperties: 0,
 				numMethods: 0);
 
-			Assert.AreEqual(typeof(Empty).GetConstructors()[0], info.Constructor);
+			Assert.AreEqual(typeof(EmptyClass).GetConstructors()[0], info.Constructor);
 		}
 
 		[Test]

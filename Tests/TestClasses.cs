@@ -1,6 +1,13 @@
 namespace Kryz.DI.Tests
 {
-	public class Empty { }
+	public class InstanceCounter
+	{
+		public static int Count;
+		public InstanceCounter() { Count++; }
+		~InstanceCounter() { Count--; }
+	}
+
+	public class EmptyClass { }
 	public struct EmptyStruct { }
 
 	public interface IA { }
@@ -31,23 +38,20 @@ namespace Kryz.DI.Tests
 		void Inject123(T1 a, T2 b, T3 c);
 	}
 
-	public interface ICircular1
+	public interface ICircular1DependsOn2
 	{
 		[Inject]
-		ICircular2 Circular { get; }
+		ICircular2DependsOn3 Circular { get; }
 	}
-	public interface ICircular2
+	public interface ICircular2DependsOn3
 	{
 		[Inject]
-		ICircular1 Circular { get; }
+		ICircular1DependsOn2 Circular { get; }
 	}
-	public interface ICircular1NoInject
+	public interface ICircular3DependsOn1
 	{
-		ICircular2NoInject Circular { get; }
-	}
-	public interface ICircular2NoInject
-	{
-		ICircular1NoInject Circular { get; }
+		[Inject]
+		ICircular1DependsOn2 Circular { get; }
 	}
 
 	public class A : IA
@@ -159,73 +163,37 @@ namespace Kryz.DI.Tests
 		protected abstract void Inject(T arg1);
 	}
 
-	public class Circular1 : ICircular1
+	public class Circular1 : ICircular1DependsOn2
 	{
-		ICircular2 ICircular1.Circular => Circular;
+		ICircular2DependsOn3 ICircular1DependsOn2.Circular => Circular;
 
-		public readonly ICircular2 Circular;
+		public readonly ICircular2DependsOn3 Circular;
 
-		public Circular1(ICircular2 circular)
+		public Circular1(ICircular2DependsOn3 circular)
 		{
 			Circular = circular;
 		}
 	}
 
-	public class Circular2 : ICircular2
+	public class Circular2 : ICircular2DependsOn3
 	{
-		ICircular1 ICircular2.Circular => Circular;
+		ICircular1DependsOn2 ICircular2DependsOn3.Circular => Circular;
 
-		public readonly ICircular1 Circular;
+		public readonly ICircular1DependsOn2 Circular;
 
-		public Circular2(ICircular1 circular)
+		public Circular2(ICircular1DependsOn2 circular)
 		{
 			Circular = circular;
 		}
 	}
 
-	public class Circular1NoInject : ICircular1NoInject
+	public class Circular3 : ICircular3DependsOn1
 	{
-		ICircular2NoInject ICircular1NoInject.Circular => Circular;
+		ICircular1DependsOn2 ICircular3DependsOn1.Circular => Circular;
 
-		public readonly ICircular2NoInject Circular;
+		public readonly ICircular1DependsOn2 Circular;
 
-		public Circular1NoInject(ICircular2NoInject circular)
-		{
-			Circular = circular;
-		}
-	}
-
-	public class Circular2NoInject : ICircular2NoInject
-	{
-		ICircular1NoInject ICircular2NoInject.Circular => Circular;
-
-		public readonly ICircular1NoInject Circular;
-
-		public Circular2NoInject(ICircular1NoInject circular)
-		{
-			Circular = circular;
-		}
-	}
-
-	public class Circular1Concrete : ICircular1
-	{
-		ICircular2 ICircular1.Circular => Circular;
-
-		public readonly ICircular2 Circular;
-
-		public Circular1Concrete(Circular2Concrete circular)
-		{
-			Circular = circular;
-		}
-	}
-
-	public class Circular2Concrete : ICircular2
-	{
-		ICircular1 ICircular2.Circular => Circular;
-
-		public readonly ICircular1 Circular;
-
-		public Circular2Concrete(Circular1Concrete circular)
+		public Circular3(ICircular1DependsOn2 circular)
 		{
 			Circular = circular;
 		}

@@ -1,28 +1,58 @@
 using System;
+using System.Reflection;
 using Kryz.DI.Exceptions;
 using NUnit.Framework;
-using static Kryz.DI.Tests.ContainerTestHelper;
 
 namespace Kryz.DI.Tests
 {
 	public class ContainerTests
 	{
-		private static void GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2)
-		{
-			root = new Builder().Build();
+		/// <summary>
+		/// Get the method info for <see cref="ITypeResolver.GetType{T}()"/>
+		/// </summary>
+		private static readonly MethodInfo getTypeMethod = typeof(ITypeResolver).GetMethod(nameof(ITypeResolver.GetType), 1, Type.EmptyTypes);
 
-			child1 = root.CreateScope();
-			child2 = root.CreateScope();
+		/// <summary>
+		/// Get the method info for <see cref="ITypeResolver.TryGetType{T}(out Type)"/>
+		/// </summary>
+		private static readonly MethodInfo tryGetTypeMethod = typeof(ITypeResolver).GetMethod(nameof(ITypeResolver.TryGetType), 1, new Type[] { typeof(Type).MakeByRefType() });
 
-			child1_child1 = child1.CreateScope();
-			child1_child2 = child1.CreateScope();
+		/// <summary>
+		/// Get the method info for <see cref="IObjectResolver.GetObject{T}()"/>
+		/// </summary>
+		private static readonly MethodInfo getObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.GetObject), 1, Type.EmptyTypes);
 
-			child2_child1 = child2.CreateScope();
-			child2_child2 = child2.CreateScope();
-		}
+		/// <summary>
+		/// Get the method info for <see cref="IObjectResolver.TryGetObject{T}(out T)"/>
+		/// </summary>
+		private static readonly MethodInfo tryGetObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.TryGetObject), 1, new Type[] { Type.MakeGenericMethodParameter(0).MakeByRefType() });
+
+		/// <summary>
+		/// Get the method info for <see cref="Builder.Register{TBase, TDerived}(Lifetime)"/>
+		/// </summary>
+		private static readonly MethodInfo registerMethod = typeof(Builder).GetMethod(nameof(Builder.Register), 2, new Type[] { typeof(Lifetime) });
+
+		public static readonly (Type, Type)[] SafeTypes = new (Type, Type)[] {
+			(typeof(EmptyClass), typeof(EmptyClass)),
+			(typeof(IA), typeof(A)),
+			(typeof(IB), typeof(B)),
+			(typeof(IC), typeof(C)),
+			(typeof(ID), typeof(D)),
+			(typeof(IE), typeof(E)),
+			(typeof(IGeneric<IA, IB, IC>), typeof(Generic<IA, IB, IC>)),
+			(typeof(IGeneric<ID, IE, EmptyClass>), typeof(Generic<ID, IE, EmptyClass>)),
+		};
+
+		public static readonly (Type, Type)[] CircularDependencyTypes = new (Type, Type)[] {
+			(typeof(ICircular1DependsOn2), typeof(Circular1)),
+			(typeof(ICircular2DependsOn3), typeof(Circular2)),
+			(typeof(ICircular3DependsOn1), typeof(Circular3)),
+		};
+
+		public static readonly Lifetime[] Lifetimes = (Lifetime[])Enum.GetValues(typeof(Lifetime));
 
 		[Test]
-		public void TestParent()
+		public void Container_WithChildScopes_ParentsMatch()
 		{
 			GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2);
 
@@ -37,7 +67,7 @@ namespace Kryz.DI.Tests
 		}
 
 		[Test]
-		public void TestChildren()
+		public void Container_WithChildScopes_ChildrenMatch()
 		{
 			GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2);
 
@@ -51,229 +81,234 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(child2.ChildScopes[1], child2_child2);
 		}
 
-		private static void HasRegistrations(IContainer container)
-		{
-			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
-			Assert.AreEqual(typeof(A), container.GetType<IA>());
-			Assert.AreEqual(typeof(B), container.GetType<IB>());
-			Assert.AreEqual(typeof(C), container.GetType<IC>());
-			Assert.AreEqual(typeof(D), container.GetType<ID>());
-			Assert.AreEqual(typeof(E), container.GetType<IE>());
-			Assert.AreEqual(typeof(Generic<IA, IB, IC>), container.GetType<IGeneric<IA, IB, IC>>());
-			Assert.AreEqual(typeof(Generic<ID, IE, Empty>), container.GetType<IGeneric<ID, IE, Empty>>());
-
-			Assert.Throws<InjectionException>(() => container.GetObject<A>());
-		}
-
-		private static void DoesNotHaveRegistrations(IContainer container)
-		{
-			Assert.IsFalse(container.TryGetType<Empty>(out _));
-			Assert.IsFalse(container.TryGetType<IA>(out _));
-			Assert.IsFalse(container.TryGetType<IB>(out _));
-			Assert.IsFalse(container.TryGetType<IC>(out _));
-			Assert.IsFalse(container.TryGetType<ID>(out _));
-			Assert.IsFalse(container.TryGetType<IE>(out _));
-			Assert.IsFalse(container.TryGetType<IGeneric<IA, IB, IC>>(out _));
-			Assert.IsFalse(container.TryGetType<IGeneric<ID, IE, Empty>>(out _));
-			Assert.IsFalse(container.TryGetType<ICircular1>(out _));
-			Assert.IsFalse(container.TryGetType<ICircular2>(out _));
-			Assert.IsFalse(container.TryGetType<ICircular1NoInject>(out _));
-			Assert.IsFalse(container.TryGetType<ICircular2NoInject>(out _));
-
-			Assert.Throws<InjectionException>(() => container.GetObject<A>());
-		}
-
-		private static void HasObjects(IContainer container)
-		{
-			Assert.IsTrue(container.GetObject<IA>() is A);
-			Assert.IsTrue(container.GetObject<IB>() is B);
-			Assert.IsTrue(container.GetObject<IC>() is C);
-			Assert.IsTrue(container.GetObject<ID>() is D);
-			Assert.IsTrue(container.GetObject<IE>() is E);
-			Assert.IsTrue(container.GetObject<IGeneric<IA, IB, IC>>() is Generic<IA, IB, IC>);
-			Assert.IsTrue(container.GetObject<IGeneric<ID, IE, Empty>>() is Generic<ID, IE, Empty>);
-		}
-
-		private static void DoesNotHaveObjects(IContainer container)
-		{
-			Assert.IsFalse(container.TryGetObject<IA>(out _));
-			Assert.IsFalse(container.TryGetObject<IB>(out _));
-			Assert.IsFalse(container.TryGetObject<IC>(out _));
-			Assert.IsFalse(container.TryGetObject<ID>(out _));
-			Assert.IsFalse(container.TryGetObject<IE>(out _));
-			Assert.IsFalse(container.TryGetObject<IGeneric<IA, IB, IC>>(out _));
-			Assert.IsFalse(container.TryGetObject<IGeneric<ID, IE, Empty>>(out _));
-
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1>());
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2>());
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular1NoInject>());
-			Assert.Throws<InjectionException>(() => container.GetObject<ICircular2NoInject>());
-		}
-
-		private static void TestObjectEquality(IContainer container, bool areEqual)
-		{
-			Action<object?, object?> assertEquality = areEqual ? Assert.AreEqual : Assert.AreNotEqual;
-
-			assertEquality(container.GetObject<IA>(), container.GetObject<IA>());
-			assertEquality(container.GetObject<IB>(), container.GetObject<IB>());
-			assertEquality(container.GetObject<IC>(), container.GetObject<IC>());
-			assertEquality(container.GetObject<ID>(), container.GetObject<ID>());
-			assertEquality(container.GetObject<IE>(), container.GetObject<IE>());
-			assertEquality(container.GetObject<IGeneric<IA, IB, IC>>(), container.GetObject<IGeneric<IA, IB, IC>>());
-			assertEquality(container.GetObject<IGeneric<ID, IE, Empty>>(), container.GetObject<IGeneric<ID, IE, Empty>>());
-
-			assertEquality(container.GetObject<IA>(), container.GetObject<IC>().A);
-			assertEquality(container.GetObject<IB>(), container.GetObject<ID>().B);
-
-			E e = (E)container.GetObject<IE>();
-			assertEquality(container.GetObject<IA>(), e.A);
-			assertEquality(container.GetObject<IB>(), e.B);
-			assertEquality(container.GetObject<IC>(), e.C);
-			assertEquality(container.GetObject<ID>(), e.D);
-		}
-
 		[Test]
-		public void TestRegistrations()
+		// Given, When, Then
+		public void Container_Empty_TryGetType_ReturnsFalse()
 		{
-			IContainer container = SetupContainer(Lifetime.Scoped);
-
-			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
-			Assert.AreEqual(typeof(A), container.GetType<IA>());
-			Assert.AreEqual(typeof(B), container.GetType<IB>());
-			Assert.AreEqual(typeof(C), container.GetType<IC>());
-			Assert.AreEqual(typeof(D), container.GetType<ID>());
-			Assert.AreEqual(typeof(E), container.GetType<IE>());
-			Assert.AreEqual(typeof(Generic<IA, IB, IC>), container.GetType<IGeneric<IA, IB, IC>>());
-			Assert.AreEqual(typeof(Generic<ID, IE, Empty>), container.GetType<IGeneric<ID, IE, Empty>>());
-
-			Assert.Throws<CircularDependencyException>(() => new Builder().Register<ICircular1, Circular1>(Lifetime.Singleton).Build());
-			Assert.Throws<CircularDependencyException>(() => new Builder().Register<ICircular2, Circular2>(Lifetime.Singleton).Build());
-
-			Assert.Throws<MissingDependencyException>(() => new Builder().Register<ICircular1NoInject, Circular1NoInject>(Lifetime.Singleton).Build());
-
+			// Arrange, Act
 			Builder builder = new();
-			builder.Register<ICircular1NoInject, Circular1NoInject>(Lifetime.Singleton);
-			builder.Register<ICircular2NoInject, Circular2NoInject>(Lifetime.Singleton);
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				Assert.IsFalse(container.TryGetType(types.Item1, out _));
+
+				// Test generic method as well
+				MethodInfo methodInfo = tryGetTypeMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.IsFalse((bool)methodInfoGeneric.Invoke(container, new object[] { null! }));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_Empty_TryGetObject_ReturnsFalse()
+		{
+			// Arrange, Act
+			Builder builder = new();
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				Assert.IsFalse(container.TryGetObject(types.Item1, out _));
+
+				// Test generic method as well
+				MethodInfo methodInfo = tryGetObjectMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.IsFalse((bool)methodInfoGeneric.Invoke(container, new object[] { null! }));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_Empty_GetType_ThrowsException()
+		{
+			// Arrange, Act
+			Builder builder = new();
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				Assert.Throws<InjectionException>(() => container.GetType(types.Item1));
+
+				// Test generic method as well
+				MethodInfo methodInfo = getTypeMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.Throws<InjectionException>(() => InvokeThrowInnerException(methodInfoGeneric, container, Array.Empty<object>()));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_Empty_GetObject_ThrowsException()
+		{
+			// Arrange, Act
+			Builder builder = new();
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				Assert.Throws<InjectionException>(() => container.GetObject(types.Item1));
+
+				// Test generic method as well
+				MethodInfo methodInfo = getObjectMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.Throws<InjectionException>(() => InvokeThrowInnerException(methodInfoGeneric, container, Array.Empty<object>()));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_SafeRegistrations_GetType_MatchesConcreteType([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+			Register(builder, SafeTypes, lifetime);
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				Assert.AreEqual(types.Item2, container.GetType(types.Item1));
+
+				// Test generic method as well
+				MethodInfo methodInfo = getTypeMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.AreEqual(types.Item2, methodInfoGeneric.Invoke(container, Array.Empty<object>()));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_SafeRegistrations_TryGetObject_ReturnsTrue([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+			Register(builder, SafeTypes, lifetime);
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				Assert.IsTrue(container.TryGetObject(types.Item1, out _));
+
+				// Test generic method as well
+				MethodInfo methodInfo = tryGetObjectMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.IsTrue((bool)methodInfoGeneric.Invoke(container, new object[] { null! }));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_SafeRegistrations_TryGetObject_DoesNotHaveOtherRegistrations([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+			Register(builder, SafeTypes, lifetime);
+			IContainer container = builder.Build();
+
+			// Assert
+			foreach ((Type, Type) types in CircularDependencyTypes)
+			{
+				Assert.IsFalse(container.TryGetObject(types.Item1, out _));
+
+				// Test generic method as well
+				MethodInfo methodInfo = tryGetObjectMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				Assert.IsFalse((bool)methodInfoGeneric.Invoke(container, new object[] { null! }));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_SafeRegistrations_GetObject_ObjectsMatchLifetime([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+			Register(builder, SafeTypes, lifetime);
+			IContainer container = builder.Build();
+
+			Action<object, object> assert = lifetime is Lifetime.Singleton or Lifetime.Scoped ? Assert.AreSame : Assert.AreNotSame;
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				assert(container.GetObject(types.Item1), container.GetObject(types.Item1));
+
+				// Test generic method as well
+				MethodInfo methodInfo = getObjectMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				assert(methodInfoGeneric.Invoke(container, Array.Empty<object>()), methodInfoGeneric.Invoke(container, Array.Empty<object>()));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Container_WithScopes_GetObject_ObjectsMatchParent([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+			Register(builder, SafeTypes, lifetime);
+			IContainer container = builder.Build();
+			IContainer child1 = container.CreateScope();
+			IContainer child2 = container.CreateScope();
+
+			Action<object, object> assert = lifetime is Lifetime.Singleton ? Assert.AreSame : Assert.AreNotSame;
+
+			// Assert
+			foreach ((Type, Type) types in SafeTypes)
+			{
+				assert(container.GetObject(types.Item1), child1.GetObject(types.Item1));
+				assert(container.GetObject(types.Item1), child2.GetObject(types.Item1));
+				assert(child1.GetObject(types.Item1), child2.GetObject(types.Item1));
+
+				// Test generic method as well
+				MethodInfo methodInfo = getObjectMethod;
+				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
+				assert(methodInfoGeneric.Invoke(container, Array.Empty<object>()), methodInfoGeneric.Invoke(child1, Array.Empty<object>()));
+				assert(methodInfoGeneric.Invoke(container, Array.Empty<object>()), methodInfoGeneric.Invoke(child2, Array.Empty<object>()));
+				assert(methodInfoGeneric.Invoke(child1, Array.Empty<object>()), methodInfoGeneric.Invoke(child2, Array.Empty<object>()));
+			}
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Builder_MissingDependencies_Build_ThrowsException([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+
+			for (int i = 0; i < SafeTypes.Length; i += 2) // Register only every other type
+			{
+				Register(builder, SafeTypes[i], lifetime);
+			}
+
+			// Assert
+			Assert.Throws<MissingDependencyException>(() => builder.Build());
+		}
+
+		[Test]
+		// Given, When, Then
+		public void Builder_CircularDependencies_Build_ThrowsException([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
+		{
+			// Arrange, Act
+			Builder builder = new();
+			Register(builder, CircularDependencyTypes, lifetime);
+
+			// Assert
 			Assert.Throws<CircularDependencyException>(() => builder.Build());
-		}
-
-		[Test]
-		public void TestSingleton()
-		{
-			IContainer empty = new Builder().Build();
-			DoesNotHaveRegistrations(empty);
-			DoesNotHaveObjects(empty);
-
-			IContainer container = SetupContainer(Lifetime.Singleton);
-			HasRegistrations(container);
-			HasObjects(container);
-			TestObjectEquality(container, areEqual: true);
-		}
-
-		[Test]
-		public void TestScoped()
-		{
-			IContainer empty = new Builder().Build();
-			DoesNotHaveRegistrations(empty);
-			DoesNotHaveObjects(empty);
-
-			IContainer container = SetupContainer(Lifetime.Scoped);
-			HasRegistrations(container);
-			HasObjects(container);
-			TestObjectEquality(container, areEqual: true);
-		}
-
-		[Test]
-		public void TestTransient()
-		{
-			IContainer empty = new Builder().Build();
-			DoesNotHaveRegistrations(empty);
-			DoesNotHaveObjects(empty);
-
-			IContainer container = SetupContainer(Lifetime.Transient);
-			HasRegistrations(container);
-			HasObjects(container);
-			TestObjectEquality(container, areEqual: false);
-		}
-
-		[Test]
-		public void TestSingletonChild()
-		{
-			IContainer root = new Builder().Build();
-
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Singleton));
-
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			HasRegistrations(child);
-			HasObjects(child);
-			TestObjectEquality(child, areEqual: true);
-		}
-
-		[Test]
-		public void TestScopedChild()
-		{
-			IContainer root = new Builder().Build();
-
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Scoped));
-
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			HasRegistrations(child);
-			HasObjects(child);
-			TestObjectEquality(child, areEqual: true);
-		}
-
-		[Test]
-		public void TestTransientChild()
-		{
-			IContainer root = new Builder().Build();
-
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Transient));
-
-			DoesNotHaveRegistrations(root);
-			DoesNotHaveObjects(root);
-
-			HasRegistrations(child);
-			HasObjects(child);
-			TestObjectEquality(child, areEqual: false);
-		}
-
-		[Test]
-		public void TestAddObject()
-		{
-			IContainer empty = new Builder().Build();
-
-			Assert.IsFalse(empty.TryGetType<Empty>(out _));
-			Assert.IsFalse(empty.TryGetObject<Empty>(out _));
-			Assert.Throws<InjectionException>(() => empty.GetType<Empty>());
-			Assert.Throws<InjectionException>(() => empty.GetObject<Empty>());
-
-			Empty emptyObj = new();
-			IContainer container = new Builder().Register(emptyObj).Build();
-
-			Assert.IsTrue(container.TryGetType<Empty>(out _));
-			Assert.IsTrue(container.TryGetObject<Empty>(out _));
-			Assert.AreEqual(typeof(Empty), container.GetType<Empty>());
-			Assert.AreEqual(emptyObj, container.GetObject<Empty>());
 		}
 
 		[Test]
 		public void TestInject()
 		{
 			IContainer root = new Builder().Build();
-			IContainer child = root.CreateScope(builder => Register(builder, Lifetime.Singleton));
+			IContainer child = root.CreateScope(builder => Register(builder, SafeTypes, Lifetime.Singleton));
 
 			{
 				Generic<IA, IB, IC> generic = new();
@@ -284,13 +319,6 @@ namespace Kryz.DI.Tests
 				Assert.AreEqual(child.GetObject<IB>(), generic.Two);
 				Assert.AreEqual(child.GetObject<IC>(), generic.Three);
 			}
-		}
-
-		private class InstanceCounter
-		{
-			public static int Count;
-			public InstanceCounter() { Count++; }
-			~InstanceCounter() { Count--; }
 		}
 
 		[Test]
@@ -313,11 +341,51 @@ namespace Kryz.DI.Tests
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
 
 			child2.TryGetObject<InstanceCounter>(out _);
-			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
-			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 3, InstanceCounter.Count);
 			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 4, InstanceCounter.Count);
+			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
+			Assert.AreEqual(startingCount + 5, InstanceCounter.Count);
+		}
+
+		private static void GetContainerWithChildren(out IContainer root, out IContainer child1, out IContainer child2, out IContainer child1_child1, out IContainer child1_child2, out IContainer child2_child1, out IContainer child2_child2)
+		{
+			root = new Builder().Build();
+
+			child1 = root.CreateScope();
+			child2 = root.CreateScope();
+
+			child1_child1 = child1.CreateScope();
+			child1_child2 = child1.CreateScope();
+
+			child2_child1 = child2.CreateScope();
+			child2_child2 = child2.CreateScope();
+		}
+
+		public static void Register(Builder builder, (Type, Type)[] registerTypes, Lifetime lifetime)
+		{
+			foreach ((Type, Type) types in registerTypes)
+			{
+				Register(builder, types, lifetime);
+			}
+		}
+
+		public static void Register(Builder builder, (Type, Type) types, Lifetime lifetime)
+		{
+			MethodInfo registerMethodGeneric = registerMethod.MakeGenericMethod(types.Item1, types.Item2);
+			registerMethodGeneric.Invoke(builder, new object[] { lifetime });
+		}
+
+		private static void InvokeThrowInnerException(MethodInfo info, object obj, object[] parameters)
+		{
+			try
+			{
+				info.Invoke(obj, parameters);
+			}
+			catch (TargetInvocationException exception)
+			{
+				throw exception.InnerException;
+			}
 		}
 	}
 }
