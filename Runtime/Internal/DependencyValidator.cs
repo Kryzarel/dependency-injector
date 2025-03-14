@@ -19,21 +19,23 @@ namespace Kryz.DI.Internal
 			}
 		}
 
-		public static Data Validate<T>(ITypeResolver resolver, IInjector injector, T types) where T : IEnumerable<Type>
+		public static Data Validate<T>(ITypeResolver resolver, IInjector injector, T registrations, IReadOnlyDictionary<Type, object> objects) where T : IReadOnlyDictionary<Type, Registration>
 		{
 			NonAllocList<Type> visitedTypes = new();
 			Dictionary<Type, IReadOnlyList<Type>>? missing = null;
 			Dictionary<Type, IReadOnlyList<Type>>? circular = null;
 
-			foreach (Type type in types)
+			foreach (KeyValuePair<Type, Registration> item in registrations)
 			{
+				Type type = item.Key;
+
 				if (HasMissingDependency(type, resolver, injector, out IReadOnlyList<Type> missingTypes))
 				{
 					missing ??= new Dictionary<Type, IReadOnlyList<Type>>();
 					missing[type] = missingTypes;
 				}
 
-				if (HasCircularDependency(type, resolver, injector, ref visitedTypes))
+				if (HasCircularDependency(type, injector, registrations, objects, ref visitedTypes))
 				{
 					circular ??= new Dictionary<Type, IReadOnlyList<Type>>();
 					circular[type] = visitedTypes.ToArray<Type, NonAllocList<Type>>();
@@ -64,7 +66,7 @@ namespace Kryz.DI.Internal
 			return missing.Count > 0;
 		}
 
-		public static bool HasCircularDependency<TList>(Type type, ITypeResolver resolver, IInjector injector, ref TList visitedTypes) where TList : IList<Type>
+		public static bool HasCircularDependency<TList>(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, ref TList visitedTypes) where TList : IList<Type>
 		{
 			if (visitedTypes.Contains(type))
 			{
@@ -77,9 +79,9 @@ namespace Kryz.DI.Internal
 			for (int i = 0; i < dependencies.Count; i++)
 			{
 				Type dependency = dependencies[i];
-				if (resolver.TryGetType(dependency, out Type? resolvedType))
+				if (registrations.TryGetValue(dependency, out Registration registration) && !objects.ContainsKey(dependency))
 				{
-					if (HasCircularDependency(resolvedType, resolver, injector, ref visitedTypes))
+					if (HasCircularDependency(registration.Type, injector, registrations, objects, ref visitedTypes))
 					{
 						return true;
 					}
