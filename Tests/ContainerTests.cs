@@ -312,9 +312,9 @@ namespace Kryz.DI.Tests
 
 			{
 				Generic<IA, IB, IC> generic = new();
-				Assert.Throws<InjectionException>(() => root.Injector.Inject(generic, root));
+				Assert.Throws<InjectionException>(() => root.Inject(generic));
 
-				child.Injector.Inject(generic, child);
+				child.Inject(generic);
 				Assert.AreEqual(child.GetObject<IA>(), generic.One);
 				Assert.AreEqual(child.GetObject<IB>(), generic.Two);
 				Assert.AreEqual(child.GetObject<IC>(), generic.Three);

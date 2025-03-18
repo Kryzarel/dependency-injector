@@ -11,5 +11,7 @@ namespace Kryz.DI
 
 		IContainer CreateScope();
 		IContainer CreateScope(Action<Builder> build);
+
+		void Inject(object obj);
 	}
 }

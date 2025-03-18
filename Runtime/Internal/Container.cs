@@ -133,6 +133,11 @@ namespace Kryz.DI.Internal
 			return container;
 		}
 
+		public void Inject(object obj)
+		{
+			Injector.Inject(obj, this);
+		}
+
 		public void Dispose()
 		{
 			Parent?.RemoveScope(this);
