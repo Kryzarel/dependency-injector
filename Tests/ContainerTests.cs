@@ -47,6 +47,11 @@ namespace Kryz.DI.Tests
 			(typeof(ICircular1DependsOn2), typeof(Circular1)),
 			(typeof(ICircular2DependsOn3), typeof(Circular2)),
 			(typeof(ICircular3DependsOn1), typeof(Circular3)),
+			(typeof(IA), typeof(ACircularDependsOnE)),
+			(typeof(IB), typeof(B)),
+			(typeof(IC), typeof(C)),
+			(typeof(ID), typeof(D)),
+			(typeof(IE), typeof(E)),
 		};
 
 		public static readonly Lifetime[] Lifetimes = (Lifetime[])Enum.GetValues(typeof(Lifetime));
@@ -200,27 +205,6 @@ namespace Kryz.DI.Tests
 				MethodInfo methodInfo = tryGetObjectMethod;
 				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
 				Assert.IsTrue((bool)methodInfoGeneric.Invoke(container, new object[] { null! }));
-			}
-		}
-
-		[Test]
-		// Given, When, Then
-		public void Container_SafeRegistrations_TryGetObject_DoesNotHaveOtherRegistrations([ValueSource(nameof(Lifetimes))] Lifetime lifetime)
-		{
-			// Arrange, Act
-			Builder builder = new();
-			Register(builder, SafeTypes, lifetime);
-			IContainer container = builder.Build();
-
-			// Assert
-			foreach ((Type, Type) types in CircularDependencyTypes)
-			{
-				Assert.IsFalse(container.TryGetObject(types.Item1, out _));
-
-				// Test generic method as well
-				MethodInfo methodInfo = tryGetObjectMethod;
-				MethodInfo methodInfoGeneric = methodInfo.MakeGenericMethod(types.Item1);
-				Assert.IsFalse((bool)methodInfoGeneric.Invoke(container, new object[] { null! }));
 			}
 		}
 

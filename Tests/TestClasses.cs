@@ -198,4 +198,15 @@ namespace Kryz.DI.Tests
 			Circular = circular;
 		}
 	}
+
+	public class ACircularDependsOnE : IA
+	{
+		public readonly IE E;
+
+		[Inject]
+		public ACircularDependsOnE(IE e)
+		{
+			E = e;
+		}
+	}
 }
