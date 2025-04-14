@@ -27,19 +27,18 @@ namespace Kryz.DI.Internal
 
 			foreach (KeyValuePair<Type, Registration> item in registrations)
 			{
-				Type keyType = item.Key;
 				Type resolvedType = item.Value.Type;
 
-				if (HasMissingDependency(keyType, resolver, injector, out IReadOnlyList<Type> missingTypes))
+				if (HasMissingDependency(resolvedType, resolver, injector, out IReadOnlyList<Type> missingTypes))
 				{
 					missing ??= new Dictionary<Type, IReadOnlyList<Type>>();
-					missing[keyType] = missingTypes;
+					missing[item.Key] = missingTypes;
 				}
 
 				if (HasCircularDependency(resolvedType, injector, registrations, objects, ref visitedTypes))
 				{
 					circular ??= new Dictionary<Type, IReadOnlyList<Type>>();
-					circular[keyType] = visitedTypes.ToArray<Type, NonAllocList<Type>>();
+					circular[item.Key] = visitedTypes.ToArray<Type, NonAllocList<Type>>();
 				}
 				visitedTypes.Clear();
 			}
