@@ -150,7 +150,7 @@ namespace Kryz.DI.Internal
 
 			foreach (object item in objects.Values)
 			{
-				if (item is IDisposable disposable)
+				if (item != this && item is IDisposable disposable)
 				{
 					disposable.Dispose();
 				}
