@@ -142,6 +142,12 @@ namespace Kryz.DI.Internal
 		{
 			Parent?.RemoveScope(this);
 
+			for (int i = childScopes.Count - 1; i >= 0; i--)
+			{
+				childScopes[i].Dispose();
+			}
+			childScopes.Clear();
+
 			foreach (object item in objects.Values)
 			{
 				if (item is IDisposable disposable)
