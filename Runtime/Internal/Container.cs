@@ -140,7 +140,7 @@ namespace Kryz.DI.Internal
 
 		public void Dispose()
 		{
-			Parent?.RemoveScope(this);
+			Parent?.childScopes.Remove(this);
 
 			for (int i = childScopes.Count - 1; i >= 0; i--)
 			{
@@ -161,20 +161,6 @@ namespace Kryz.DI.Internal
 		~Container()
 		{
 			Dispose();
-		}
-
-		private bool RemoveScope(IContainer child)
-		{
-			for (int i = 0; i < childScopes.Count; i++)
-			{
-				Container container = childScopes[i];
-				if (container == child)
-				{
-					childScopes.RemoveAt(i);
-					return true;
-				}
-			}
-			return false;
 		}
 
 		private object GetOrCreateObject(Type type, Type resolvedType)
