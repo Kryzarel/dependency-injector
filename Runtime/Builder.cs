@@ -7,7 +7,7 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public class Builder
+	public class Builder : IBuilder, IScopeBuilder
 	{
 		private readonly Container? parent;
 		private readonly Dictionary<Type, object> objects = new();
@@ -41,6 +41,10 @@ namespace Kryz.DI
 			registrations[typeof(T)] = new Registration(obj.GetType(), Lifetime.Singleton);
 			return this;
 		}
+
+		IBuilder IScopeBuilder.Register<T>(Lifetime lifetime) => Register<T>(lifetime);
+		IBuilder IScopeBuilder.Register<TBase, TDerived>(Lifetime lifetime) => Register<TBase, TDerived>(lifetime);
+		IBuilder IScopeBuilder.Register<T>(T obj) => Register(obj);
 
 		public IContainer Build()
 		{

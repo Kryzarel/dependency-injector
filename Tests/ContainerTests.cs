@@ -308,27 +308,27 @@ namespace Kryz.DI.Tests
 		[Test]
 		public void TestInstantiate()
 		{
-			IContainer root = new Builder().Register<InstanceCounter>(Lifetime.Scoped).Build();
-			IContainer child = root.CreateScope();
-			IContainer child2 = child.CreateScope(builder => builder.Register<InstanceCounter>(Lifetime.Transient));
+			IContainer rootScoped = new Builder().Register<InstanceCounter>(Lifetime.Scoped).Build();
+			IContainer childScoped = rootScoped.CreateScope();
+			IContainer childTransient = childScoped.CreateScope(builder => builder.Register<InstanceCounter>(Lifetime.Transient));
 
 			int startingCount = InstanceCounter.Count;
 
-			root.TryGetObject<InstanceCounter>(out _);
+			rootScoped.TryGetObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
-			Assert.IsTrue(root.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(rootScoped.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
 
-			child.TryGetObject<InstanceCounter>(out _);
+			childScoped.TryGetObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
-			Assert.IsTrue(child.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(childScoped.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
 
-			child2.TryGetObject<InstanceCounter>(out _);
+			childTransient.TryGetObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 3, InstanceCounter.Count);
-			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(childTransient.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 4, InstanceCounter.Count);
-			Assert.IsTrue(child2.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(childTransient.TryGetObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 5, InstanceCounter.Count);
 		}
 
@@ -347,7 +347,7 @@ namespace Kryz.DI.Tests
 		}
 
 		// TODO: Possibly change to private after deleting ContainerTestHelper
-		public static void Register(Builder builder, (Type, Type)[] registerTypes, Lifetime lifetime)
+		public static void Register(IScopeBuilder builder, (Type, Type)[] registerTypes, Lifetime lifetime)
 		{
 			foreach ((Type, Type) types in registerTypes)
 			{
@@ -355,7 +355,7 @@ namespace Kryz.DI.Tests
 			}
 		}
 
-		private static void Register(Builder builder, (Type, Type) types, Lifetime lifetime)
+		private static void Register(IScopeBuilder builder, (Type, Type) types, Lifetime lifetime)
 		{
 			MethodInfo registerMethodGeneric = registerMethod.MakeGenericMethod(types.Item1, types.Item2);
 			registerMethodGeneric.Invoke(builder, new object[] { lifetime });
