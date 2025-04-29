@@ -148,9 +148,9 @@ namespace Kryz.DI.Internal
 			}
 			childScopes.Clear();
 
-			foreach (object item in objects.Values)
+			foreach (object obj in objects.Values)
 			{
-				if (item != this && item is IDisposable disposable)
+				if (obj != this && obj is IDisposable disposable)
 				{
 					disposable.Dispose();
 				}
