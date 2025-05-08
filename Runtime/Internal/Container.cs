@@ -31,6 +31,7 @@ namespace Kryz.DI.Internal
 		internal Container(Container parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
 		{
 			Parent = parent;
+			Parent.childScopes.Add(this);
 		}
 
 		public T GetObject<T>()
@@ -117,20 +118,21 @@ namespace Kryz.DI.Internal
 			return false;
 		}
 
+		public IBuilder CreateScopeBuilder()
+		{
+			return new Builder(this);
+		}
+
 		public IContainer CreateScope()
 		{
-			Container container = new Builder(this).Build_Internal();
-			childScopes.Add(container);
-			return container;
+			return new Builder(this).Build();
 		}
 
 		public IContainer CreateScope(Action<IScopeBuilder> builderAction)
 		{
 			Builder builder = new(this);
 			builderAction(builder);
-			Container container = builder.Build_Internal();
-			childScopes.Add(container);
-			return container;
+			return builder.Build();
 		}
 
 		public void Inject(object obj)

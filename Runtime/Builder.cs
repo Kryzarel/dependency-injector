@@ -48,11 +48,6 @@ namespace Kryz.DI
 
 		public IContainer Build()
 		{
-			return Build_Internal();
-		}
-
-		internal Container Build_Internal()
-		{
 			if (container != null)
 			{
 				throw new InvalidOperationException($"Can't build from the same {nameof(Builder)} more than once.");

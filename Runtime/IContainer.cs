@@ -9,6 +9,7 @@ namespace Kryz.DI
 		IContainer? Parent { get; }
 		IReadOnlyList<IContainer> ChildScopes { get; }
 
+		IBuilder CreateScopeBuilder();
 		IContainer CreateScope();
 		IContainer CreateScope(Action<IScopeBuilder> builderAction);
 
