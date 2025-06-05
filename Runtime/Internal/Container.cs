@@ -9,7 +9,7 @@ namespace Kryz.DI.Internal
 	internal class Container : IContainer
 	{
 		private readonly Dictionary<Type, object> objects;
-		private readonly IReadOnlyDictionary<Type, Registration> registrations;
+		private readonly Dictionary<Type, Registration> registrations;
 		private readonly PooledList<Container> childScopes;
 
 		public readonly IInjector Injector;
@@ -20,7 +20,7 @@ namespace Kryz.DI.Internal
 		IContainer? IContainer.Parent => Parent;
 		IReadOnlyList<IContainer> IContainer.ChildScopes => ChildScopes;
 
-		internal Container(IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
+		internal Container(IInjector injector, Dictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
 		{
 			Injector = injector;
 			this.objects = objects;
@@ -28,7 +28,7 @@ namespace Kryz.DI.Internal
 			ChildScopes = childScopes = new PooledList<Container>();
 		}
 
-		internal Container(Container parent, IReadOnlyDictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
+		internal Container(Container parent, Dictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
 		{
 			Parent = parent;
 			Parent.childScopes.Add(this);
@@ -148,7 +148,6 @@ namespace Kryz.DI.Internal
 			{
 				childScopes[i].Dispose();
 			}
-			childScopes.Clear();
 
 			foreach (object obj in objects.Values)
 			{
@@ -157,7 +156,10 @@ namespace Kryz.DI.Internal
 					disposable.Dispose();
 				}
 			}
+
 			objects.Clear();
+			registrations.Clear();
+			childScopes.Clear();
 		}
 
 		~Container()
