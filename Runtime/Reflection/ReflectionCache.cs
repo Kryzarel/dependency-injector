@@ -15,13 +15,15 @@ namespace Kryz.DI.Reflection
 			public readonly IReadOnlyList<PropertyInfo> Properties;
 			public readonly IReadOnlyList<MethodInfo> Methods;
 			public readonly IReadOnlyList<IReadOnlyList<Type>> MethodParams;
+			public readonly IReadOnlyList<Type> AllDependencies;
 
 			public InjectionInfo(ConstructorInfo? constructor,
 				IReadOnlyList<Type> constructorParams,
 				IReadOnlyList<FieldInfo> fields,
 				IReadOnlyList<PropertyInfo> properties,
 				IReadOnlyList<MethodInfo> methods,
-				IReadOnlyList<IReadOnlyList<Type>> methodParams)
+				IReadOnlyList<IReadOnlyList<Type>> methodParams,
+				IReadOnlyList<Type> allDependencies)
 			{
 				Constructor = constructor;
 				ConstructorParams = constructorParams;
@@ -29,6 +31,7 @@ namespace Kryz.DI.Reflection
 				Properties = properties;
 				Methods = methods;
 				MethodParams = methodParams;
+				AllDependencies = allDependencies;
 			}
 		}
 
@@ -41,6 +44,7 @@ namespace Kryz.DI.Reflection
 		private readonly List<FieldInfo> fields = new();
 		private readonly List<PropertyInfo> properties = new();
 		private readonly List<MethodInfo> methods = new();
+		private readonly HashSet<Type> allDependencies = new();
 
 		public InjectionInfo Get(Type type)
 		{
@@ -60,18 +64,23 @@ namespace Kryz.DI.Reflection
 			type.GetAllPropertiesWithAttribute(flags, injectAttribute, properties);
 			type.GetAllMethodsWithAttribute(flags, injectAttribute, methods);
 
+			IReadOnlyList<IReadOnlyList<Type>> methodParams = GetMethodParamTypes(methods);
+			GetAllDependencies(constructorParams, fields, properties, methods, methodParams, allDependencies);
+
 			InjectionInfo injectionInfo = new(
 				constructor,
 				GetArray(constructorParams),
 				GetArray(fields),
 				GetArray(properties),
 				GetArray(methods),
-				GetMethodParamTypes(methods));
+				methodParams,
+				GetArray(allDependencies));
 
 			constructorParams.Clear();
 			fields.Clear();
 			properties.Clear();
 			methods.Clear();
+			allDependencies.Clear();
 
 			return injectionInfo;
 		}
@@ -130,9 +139,56 @@ namespace Kryz.DI.Reflection
 			return methodParams;
 		}
 
+		private static void GetAllDependencies(
+			IReadOnlyList<Type> constructorParams,
+			IReadOnlyList<FieldInfo> fields,
+			IReadOnlyList<PropertyInfo> properties,
+			IReadOnlyList<MethodInfo> methods,
+			IReadOnlyList<IReadOnlyList<Type>> methodParams,
+			HashSet<Type> allDependencies)
+		{
+			int count = constructorParams.Count + fields.Count + properties.Count;
+			for (int i = 0; i < methodParams.Count; i++)
+			{
+				count += methodParams[i].Count;
+			}
+
+			allDependencies.EnsureCapacity(count);
+
+			for (int i = 0; i < constructorParams.Count; i++)
+			{
+				allDependencies.Add(constructorParams[i]);
+			}
+
+			for (int i = 0; i < fields.Count; i++)
+			{
+				allDependencies.Add(fields[i].FieldType);
+			}
+
+			for (int i = 0; i < properties.Count; i++)
+			{
+				allDependencies.Add(properties[i].PropertyType);
+			}
+
+			for (int i = 0; i < methods.Count; i++)
+			{
+				IReadOnlyList<Type> paramTypes = methodParams[i];
+
+				for (int j = 0; j < paramTypes.Count; j++)
+				{
+					allDependencies.Add(paramTypes[j]);
+				}
+			}
+		}
+
 		private static T[] GetArray<T>(List<T> list)
 		{
 			return list.Count > 0 ? list.ToArray() : Array.Empty<T>();
+		}
+
+		private static T[] GetArray<T>(HashSet<T> set)
+		{
+			return set.Count > 0 ? set.ToArray() : Array.Empty<T>();
 		}
 	}
 }

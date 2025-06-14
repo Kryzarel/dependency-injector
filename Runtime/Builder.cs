@@ -15,6 +15,13 @@ namespace Kryz.DI
 
 		private Container? container;
 
+		private static readonly IInjector injector;
+
+		static Builder()
+		{
+			injector = new ReflectionInjector();
+		}
+
 		internal Builder(Container parent)
 		{
 			this.parent = parent;
@@ -53,7 +60,6 @@ namespace Kryz.DI
 				throw new InvalidOperationException($"Can't build from the same {nameof(Builder)} more than once.");
 			}
 
-			IInjector injector = parent?.Injector ?? new ReflectionInjector();
 			container = parent != null ? new Container(parent, registrations, objects) : new Container(injector, registrations, objects);
 
 			// Register the Container itself
@@ -61,7 +67,7 @@ namespace Kryz.DI
 			Register<IObjectResolver>(container);
 			Register<ITypeResolver>(container);
 
-			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, registrations, objects);
+			DependencyValidator.Data data = DependencyValidator.Validate(container, container.Injector, registrations, objects);
 			if (data.MissingDependencies != null && data.MissingDependencies.Count > 0)
 			{
 				throw new MissingDependencyException($"Can't build a container with missing dependencies: {FormatMissingDependencies(data.MissingDependencies)}");

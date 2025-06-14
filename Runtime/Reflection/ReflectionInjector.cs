@@ -9,7 +9,6 @@ namespace Kryz.DI.Reflection
 	public class ReflectionInjector : IInjector
 	{
 		private readonly ReflectionCache reflectionCache = new();
-		private readonly Dictionary<Type, IReadOnlyList<Type>> dependenciesCache = new();
 		// If you have a method with 32 parameters or more, kindly reconsider.
 		private readonly object[][] paramCache = new object[32][];
 
@@ -76,52 +75,7 @@ namespace Kryz.DI.Reflection
 
 		public IReadOnlyList<Type> GetDependencies(Type type)
 		{
-			if (!dependenciesCache.TryGetValue(type, out IReadOnlyList<Type> dependencies))
-			{
-				dependenciesCache[type] = dependencies = GetDependenciesList(type);
-			}
-			return dependencies;
-		}
-
-		private IReadOnlyList<Type> GetDependenciesList(Type type)
-		{
-			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
-
-			int count = info.ConstructorParams.Count + info.Fields.Count + info.Properties.Count;
-			for (int i = 0; i < info.MethodParams.Count; i++)
-			{
-				count += info.MethodParams[i].Count;
-			}
-
-			Type[] dependencies = new Type[count];
-			int index = 0;
-
-			for (int i = 0; i < info.ConstructorParams.Count; i++)
-			{
-				dependencies[index++] = info.ConstructorParams[i];
-			}
-
-			for (int i = 0; i < info.Fields.Count; i++)
-			{
-				dependencies[index++] = info.Fields[i].FieldType;
-			}
-
-			for (int i = 0; i < info.Properties.Count; i++)
-			{
-				dependencies[index++] = info.Properties[i].PropertyType;
-			}
-
-			for (int i = 0; i < info.Methods.Count; i++)
-			{
-				IReadOnlyList<Type> paramTypes = info.MethodParams[i];
-
-				for (int j = 0; j < paramTypes.Count; j++)
-				{
-					dependencies[index++] = paramTypes[j];
-				}
-			}
-
-			return dependencies;
+			return reflectionCache.Get(type).AllDependencies;
 		}
 
 		private object[] GetFromParamCache(int length)
