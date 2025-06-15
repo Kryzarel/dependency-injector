@@ -2,7 +2,7 @@ using System;
 
 namespace Kryz.DI
 {
-	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Constructor, AllowMultiple = false, Inherited = true)]
+	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
 	public class InjectAttribute : Attribute
 	{
 	}
