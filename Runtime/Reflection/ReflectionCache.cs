@@ -46,7 +46,7 @@ namespace Kryz.DI.Reflection
 		private readonly List<MethodInfo> methods = new();
 		private readonly HashSet<Type> allDependencies = new();
 
-		public InjectionInfo Get(Type type)
+		public InjectionInfo GetInfo(Type type)
 		{
 			if (!cache.TryGetValue(type, out InjectionInfo info))
 			{

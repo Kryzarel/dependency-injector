@@ -13,28 +13,28 @@ namespace Kryz.DI.Tests
 		public void TestCache()
 		{
 			ReflectionCache reflectionCache = new();
-			Assert.AreEqual(reflectionCache.Get(typeof(IA)), reflectionCache.Get(typeof(IA)));
-			Assert.AreEqual(reflectionCache.Get(typeof(IB)), reflectionCache.Get(typeof(IB)));
-			Assert.AreEqual(reflectionCache.Get(typeof(IC)), reflectionCache.Get(typeof(IC)));
-			Assert.AreEqual(reflectionCache.Get(typeof(ID)), reflectionCache.Get(typeof(ID)));
-			Assert.AreEqual(reflectionCache.Get(typeof(A)), reflectionCache.Get(typeof(A)));
-			Assert.AreEqual(reflectionCache.Get(typeof(B)), reflectionCache.Get(typeof(B)));
-			Assert.AreEqual(reflectionCache.Get(typeof(C)), reflectionCache.Get(typeof(C)));
-			Assert.AreEqual(reflectionCache.Get(typeof(D)), reflectionCache.Get(typeof(D)));
-			Assert.AreEqual(reflectionCache.Get(typeof(EmptyClass)), reflectionCache.Get(typeof(EmptyClass)));
-			Assert.AreEqual(reflectionCache.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(IA)), reflectionCache.GetInfo(typeof(IA)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(IB)), reflectionCache.GetInfo(typeof(IB)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(IC)), reflectionCache.GetInfo(typeof(IC)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(ID)), reflectionCache.GetInfo(typeof(ID)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(A)), reflectionCache.GetInfo(typeof(A)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(B)), reflectionCache.GetInfo(typeof(B)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(C)), reflectionCache.GetInfo(typeof(C)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(D)), reflectionCache.GetInfo(typeof(D)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(EmptyClass)), reflectionCache.GetInfo(typeof(EmptyClass)));
+			Assert.AreEqual(reflectionCache.GetInfo(typeof(EmptyStruct)), reflectionCache.GetInfo(typeof(EmptyStruct)));
 
 			ReflectionCache reflectionCache2 = new();
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(IA)), reflectionCache.Get(typeof(IA)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(IB)), reflectionCache.Get(typeof(IB)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(IC)), reflectionCache.Get(typeof(IC)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(ID)), reflectionCache.Get(typeof(ID)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(A)), reflectionCache.Get(typeof(A)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(B)), reflectionCache.Get(typeof(B)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(C)), reflectionCache.Get(typeof(C)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(D)), reflectionCache.Get(typeof(D)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(EmptyClass)), reflectionCache.Get(typeof(EmptyClass)));
-			Assert.AreNotEqual(reflectionCache2.Get(typeof(EmptyStruct)), reflectionCache.Get(typeof(EmptyStruct)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(IA)), reflectionCache.GetInfo(typeof(IA)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(IB)), reflectionCache.GetInfo(typeof(IB)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(IC)), reflectionCache.GetInfo(typeof(IC)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(ID)), reflectionCache.GetInfo(typeof(ID)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(A)), reflectionCache.GetInfo(typeof(A)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(B)), reflectionCache.GetInfo(typeof(B)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(C)), reflectionCache.GetInfo(typeof(C)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(D)), reflectionCache.GetInfo(typeof(D)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(EmptyClass)), reflectionCache.GetInfo(typeof(EmptyClass)));
+			Assert.AreNotEqual(reflectionCache2.GetInfo(typeof(EmptyStruct)), reflectionCache.GetInfo(typeof(EmptyStruct)));
 		}
 
 		[Test]
@@ -45,12 +45,12 @@ namespace Kryz.DI.Tests
 			Stopwatch stopwatch = new();
 
 			stopwatch.Restart();
-			reflectionCache.Get(typeof(A));
+			reflectionCache.GetInfo(typeof(A));
 			stopwatch.Stop();
 			long first = stopwatch.ElapsedTicks;
 
 			stopwatch.Restart();
-			reflectionCache.Get(typeof(A));
+			reflectionCache.GetInfo(typeof(A));
 			stopwatch.Stop();
 			long second = stopwatch.ElapsedTicks;
 
@@ -264,7 +264,7 @@ namespace Kryz.DI.Tests
 		{
 			Type type = typeof(T);
 			ReflectionCache reflectionCache = new();
-			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
+			ReflectionCache.InjectionInfo info = reflectionCache.GetInfo(type);
 
 			if (hasConstructor)
 			{

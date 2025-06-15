@@ -19,7 +19,7 @@ namespace Kryz.DI.Reflection
 
 		public object CreateObject(Type type, IObjectResolver resolver)
 		{
-			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
+			ReflectionCache.InjectionInfo info = reflectionCache.GetInfo(type);
 
 			if (info.Constructor != null)
 			{
@@ -44,7 +44,7 @@ namespace Kryz.DI.Reflection
 		public void Inject(object obj, IObjectResolver resolver)
 		{
 			Type type = obj.GetType();
-			ReflectionCache.InjectionInfo info = reflectionCache.Get(type);
+			ReflectionCache.InjectionInfo info = reflectionCache.GetInfo(type);
 
 			for (int i = 0; i < info.Fields.Count; i++)
 			{
@@ -75,7 +75,7 @@ namespace Kryz.DI.Reflection
 
 		public IReadOnlyList<Type> GetDependencies(Type type)
 		{
-			return reflectionCache.Get(type).AllDependencies;
+			return reflectionCache.GetInfo(type).AllDependencies;
 		}
 
 		private object[] GetFromParamCache(int length)
