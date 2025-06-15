@@ -10,25 +10,24 @@ namespace Kryz.DI
 	public class Builder : IBuilder, IScopeBuilder
 	{
 		private readonly Container? parent;
+		private readonly IInjector injector;
 		private readonly Dictionary<Type, object> objects = new();
 		private readonly Dictionary<Type, Registration> registrations = new();
 
 		private Container? container;
 
-		private static readonly IInjector injector;
-
-		static Builder()
-		{
-			injector = new ReflectionInjector();
-		}
+		private static readonly ReflectionInjector reflectionInjector = new();
+		private static readonly ExpressionInjector expressionInjector = new();
 
 		internal Builder(Container parent)
 		{
 			this.parent = parent;
+			injector = parent.Injector;
 		}
 
-		public Builder()
+		public Builder(bool useExpressionInjector = false)
 		{
+			injector = useExpressionInjector ? expressionInjector : reflectionInjector;
 		}
 
 		public Builder Register<T>(Lifetime lifetime)
