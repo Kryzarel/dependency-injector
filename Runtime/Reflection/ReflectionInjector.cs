@@ -8,13 +8,14 @@ namespace Kryz.DI.Reflection
 {
 	public class ReflectionInjector : IInjector
 	{
-		private readonly ReflectionCache reflectionCache = new();
+		private readonly ReflectionCache reflectionCache;
 		// If you have a method with 32 parameters or more, kindly reconsider.
 		private readonly object[][] paramCache = new object[32][];
 
-		public ReflectionInjector()
+		public ReflectionInjector(ReflectionCache? reflectionCache = null)
 		{
 			paramCache[0] = Array.Empty<object>();
+			this.reflectionCache = reflectionCache ?? new();
 		}
 
 		public object CreateObject(Type type, IObjectResolver resolver)

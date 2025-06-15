@@ -12,9 +12,14 @@ namespace Kryz.DI.Reflection
 
 		private static readonly MethodInfo getObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.GetObject), Type.EmptyTypes);
 
-		private readonly ReflectionCache reflectionCache = new();
+		private readonly ReflectionCache reflectionCache;
 		private readonly Dictionary<Type, CreateDelegate> createCache = new();
 		private readonly Dictionary<Type, InjectDelegate> injectCache = new();
+
+		public ExpressionInjector(ReflectionCache? reflectionCache = null)
+		{
+			this.reflectionCache = reflectionCache ?? new();
+		}
 
 		public object CreateObject(Type type, IObjectResolver resolver)
 		{
@@ -46,7 +51,7 @@ namespace Kryz.DI.Reflection
 			public NullableRef(T value) => Value = value;
 		}
 
-		public void CacheEverything()
+		public void CacheAllClassesWithInjectAttribute()
 		{
 			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 			{

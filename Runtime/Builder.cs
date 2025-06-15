@@ -9,6 +9,9 @@ namespace Kryz.DI
 {
 	public class Builder : IBuilder, IScopeBuilder
 	{
+		private static readonly ReflectionInjector reflectionInjector;
+		private static readonly ExpressionInjector expressionInjector;
+
 		private readonly Container? parent;
 		private readonly IInjector injector;
 		private readonly Dictionary<Type, object> objects = new();
@@ -16,8 +19,12 @@ namespace Kryz.DI
 
 		private Container? container;
 
-		private static readonly ReflectionInjector reflectionInjector = new();
-		private static readonly ExpressionInjector expressionInjector = new();
+		static Builder()
+		{
+			ReflectionCache reflectionCache = new();
+			reflectionInjector = new(reflectionCache);
+			expressionInjector = new(reflectionCache);
+		}
 
 		internal Builder(Container parent)
 		{
