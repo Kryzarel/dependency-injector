@@ -6,21 +6,21 @@ namespace Kryz.DI
 	public interface ITypeResolver
 	{
 		/// <summary>
-		/// Get the concrete type registered to the requested base type "T". An exception is thrown if the base type has not been registered.
+		/// Get the derived type registered to the requested base type "T". An exception is thrown if the base type has not been registered.
 		/// </summary>
-		Type GetType<T>();
+		Type ResolveType<T>();
 		/// <summary>
-		/// Get the concrete type registered to the requested base type. An exception is thrown if the base type has not been registered.
+		/// Get the derived type registered to the requested base type. An exception is thrown if the base type has not been registered.
 		/// </summary>
-		Type GetType(Type baseType);
+		Type ResolveType(Type baseType);
 
 		/// <summary>
-		/// Get the concrete type registered to the requested base type "T". Returns false if the base type has not been registered.
+		/// Get the derived type registered to the requested base type "T". Returns false if the base type has not been registered.
 		/// </summary>
-		bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type resolvedType);
+		bool TryResolveType<T>([MaybeNullWhen(returnValue: false)] out Type resolvedType);
 		/// <summary>
-		/// Get the concrete type registered to the requested base type. Returns false if the base type has not been registered.
+		/// Get the derived type registered to the requested base type. Returns false if the base type has not been registered.
 		/// </summary>
-		bool TryGetType(Type baseType, [MaybeNullWhen(returnValue: false)] out Type resolvedType);
+		bool TryResolveType(Type baseType, [MaybeNullWhen(returnValue: false)] out Type resolvedType);
 	}
 }

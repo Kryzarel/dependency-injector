@@ -8,19 +8,19 @@ namespace Kryz.DI
 		/// <summary>
 		///	Get or create an object registered as the requested type. An exception is thrown if the type has not been registered.
 		/// </summary>
-		T GetObject<T>();
+		T ResolveObject<T>();
 		/// <summary>
 		///	Get or create an object registered as the requested type. An exception is thrown if the type has not been registered.
 		/// </summary>
-		object GetObject(Type type);
+		object ResolveObject(Type type);
 
 		/// <summary>
 		///	Get or create an object registered as the requested type. Returns false if the type has not been registered.
 		/// </summary>
-		bool TryGetObject<T>([MaybeNullWhen(returnValue: false)] out T obj);
+		bool TryResolveObject<T>([MaybeNullWhen(returnValue: false)] out T obj);
 		/// <summary>
 		///	Get or create an object registered as the requested type. Returns false if the type has not been registered.
 		/// </summary>
-		bool TryGetObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj);
+		bool TryResolveObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj);
 	}
 }

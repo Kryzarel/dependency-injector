@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Kryz.Collections;
-using Kryz.Utils;
 
 namespace Kryz.DI.Internal
 {
@@ -38,7 +37,7 @@ namespace Kryz.DI.Internal
 				if (HasCircularDependency(resolvedType, injector, registrations, objects, ref visitedTypes))
 				{
 					circular ??= new Dictionary<Type, IReadOnlyList<Type>>();
-					circular[item.Key] = visitedTypes.ToArray<Type, NonAllocList<Type>>();
+					circular[item.Key] = visitedTypes.ToArray();
 				}
 				visitedTypes.Clear();
 			}
@@ -55,7 +54,7 @@ namespace Kryz.DI.Internal
 			for (int i = 0; i < dependencies.Count; i++)
 			{
 				Type dependency = dependencies[i];
-				if (!resolver.TryGetType(dependency, out _))
+				if (!resolver.TryResolveType(dependency, out _))
 				{
 					missingTypes ??= new List<Type>();
 					missingTypes.Add(dependency);
@@ -66,7 +65,7 @@ namespace Kryz.DI.Internal
 			return missing.Count > 0;
 		}
 
-		public static bool HasCircularDependency<TList>(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, ref TList visitedTypes) where TList : IList<Type>
+		public static bool HasCircularDependency(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, ref NonAllocList<Type> visitedTypes)
 		{
 			if (visitedTypes.Contains(type))
 			{

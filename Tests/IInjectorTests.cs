@@ -13,22 +13,22 @@ namespace Kryz.DI.Tests
 			private readonly Dictionary<Type, object> objects = new();
 			private readonly Dictionary<Type, Type> registrations = new();
 
-			public T GetObject<T>() => (T)objects[typeof(T)];
-			public object GetObject(Type type) => objects[type];
+			public T ResolveObject<T>() => (T)objects[typeof(T)];
+			public object ResolveObject(Type type) => objects[type];
 
-			public bool TryGetObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
+			public bool TryResolveObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
 			{
 				bool result = objects.TryGetValue(typeof(T), out object o);
 				obj = result ? (T)o : default;
 				return result;
 			}
-			public bool TryGetObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj) => objects.TryGetValue(type, out obj);
+			public bool TryResolveObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj) => objects.TryGetValue(type, out obj);
 
-			public Type GetType<T>() => registrations[typeof(T)];
-			public Type GetType(Type type) => registrations[type];
+			public Type ResolveType<T>() => registrations[typeof(T)];
+			public Type ResolveType(Type type) => registrations[type];
 
-			public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type type) => registrations.TryGetValue(typeof(T), out type);
-			public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType) => registrations.TryGetValue(type, out resolvedType);
+			public bool TryResolveType<T>([MaybeNullWhen(returnValue: false)] out Type type) => registrations.TryGetValue(typeof(T), out type);
+			public bool TryResolveType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType) => registrations.TryGetValue(type, out resolvedType);
 
 			public void Add<T1, T2>(T2 obj) where T2 : notnull, T1
 			{

@@ -34,37 +34,37 @@ namespace Kryz.DI.Internal
 			Parent.childScopes.Add(this);
 		}
 
-		public T GetObject<T>()
+		public T ResolveObject<T>()
 		{
-			return (T)GetObject(typeof(T));
+			return (T)ResolveObject(typeof(T));
 		}
 
-		public object GetObject(Type type)
+		public object ResolveObject(Type type)
 		{
-			if (TryGetObject(type, out object? obj))
+			if (TryResolveObject(type, out object? obj))
 			{
 				return obj;
 			}
 			throw new InjectionException($"Type {type.FullName} has not been registered.");
 		}
 
-		public Type GetType<T>()
+		public Type ResolveType<T>()
 		{
-			return GetType(typeof(T));
+			return ResolveType(typeof(T));
 		}
 
-		public Type GetType(Type type)
+		public Type ResolveType(Type type)
 		{
-			if (TryGetType(type, out Type? resolvedType))
+			if (TryResolveType(type, out Type? resolvedType))
 			{
 				return resolvedType;
 			}
 			throw new InjectionException($"Type {type.FullName} has not been registered.");
 		}
 
-		public bool TryGetObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
+		public bool TryResolveObject<T>([MaybeNullWhen(returnValue: false)] out T obj)
 		{
-			if (TryGetObject(typeof(T), out object? o))
+			if (TryResolveObject(typeof(T), out object? o))
 			{
 				obj = (T)o;
 				return true;
@@ -73,7 +73,7 @@ namespace Kryz.DI.Internal
 			return false;
 		}
 
-		public bool TryGetObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj)
+		public bool TryResolveObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj)
 		{
 			if (objects.TryGetValue(type, out obj))
 			{
@@ -99,12 +99,12 @@ namespace Kryz.DI.Internal
 			return false;
 		}
 
-		public bool TryGetType<T>([MaybeNullWhen(returnValue: false)] out Type resolvedType)
+		public bool TryResolveType<T>([MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
-			return TryGetType(typeof(T), out resolvedType);
+			return TryResolveType(typeof(T), out resolvedType);
 		}
 
-		public bool TryGetType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
+		public bool TryResolveType(Type type, [MaybeNullWhen(returnValue: false)] out Type resolvedType)
 		{
 			for (Container? container = this; container != null; container = container.Parent)
 			{

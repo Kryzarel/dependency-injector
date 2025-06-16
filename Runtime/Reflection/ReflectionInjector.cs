@@ -29,7 +29,7 @@ namespace Kryz.DI.Reflection
 				for (int i = 0; i < paramLength; i++)
 				{
 					Type item = info.ConstructorParams[i];
-					constructorParams[i] = resolver.GetObject(item);
+					constructorParams[i] = resolver.ResolveObject(item);
 				}
 				object obj = info.Constructor.Invoke(constructorParams);
 				ReturnToParamCache(constructorParams);
@@ -50,13 +50,13 @@ namespace Kryz.DI.Reflection
 			for (int i = 0; i < info.Fields.Count; i++)
 			{
 				FieldInfo item = info.Fields[i];
-				item.SetValue(obj, resolver.GetObject(item.FieldType));
+				item.SetValue(obj, resolver.ResolveObject(item.FieldType));
 			}
 
 			for (int i = 0; i < info.Properties.Count; i++)
 			{
 				PropertyInfo item = info.Properties[i];
-				item.SetValue(obj, resolver.GetObject(item.PropertyType));
+				item.SetValue(obj, resolver.ResolveObject(item.PropertyType));
 			}
 
 			for (int i = 0; i < info.Methods.Count; i++)
@@ -67,7 +67,7 @@ namespace Kryz.DI.Reflection
 				object[] methodParams = GetFromParamCache(paramTypes.Count);
 				for (int j = 0; j < methodParams.Length; j++)
 				{
-					methodParams[j] = resolver.GetObject(paramTypes[j]);
+					methodParams[j] = resolver.ResolveObject(paramTypes[j]);
 				}
 				item.Invoke(obj, methodParams);
 				ReturnToParamCache(methodParams);
@@ -86,11 +86,7 @@ namespace Kryz.DI.Reflection
 
 		private void ReturnToParamCache(object[] parameters)
 		{
-			int length = parameters.Length;
-			if (length < paramCache.Length)
-			{
-				Array.Clear(parameters, 0, length);
-			}
+			Array.Clear(parameters, 0, parameters.Length);
 		}
 	}
 }

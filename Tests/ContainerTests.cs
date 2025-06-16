@@ -10,22 +10,22 @@ namespace Kryz.DI.Tests
 		/// <summary>
 		/// Get the method info for <see cref="ITypeResolver.GetType{T}()"/>
 		/// </summary>
-		private static readonly MethodInfo getTypeMethod = typeof(ITypeResolver).GetMethod(nameof(ITypeResolver.GetType), 1, Type.EmptyTypes);
+		private static readonly MethodInfo getTypeMethod = typeof(ITypeResolver).GetMethod(nameof(ITypeResolver.ResolveType), 1, Type.EmptyTypes);
 
 		/// <summary>
 		/// Get the method info for <see cref="ITypeResolver.TryGetType{T}(out Type)"/>
 		/// </summary>
-		private static readonly MethodInfo tryGetTypeMethod = typeof(ITypeResolver).GetMethod(nameof(ITypeResolver.TryGetType), 1, new Type[] { typeof(Type).MakeByRefType() });
+		private static readonly MethodInfo tryGetTypeMethod = typeof(ITypeResolver).GetMethod(nameof(ITypeResolver.TryResolveType), 1, new Type[] { typeof(Type).MakeByRefType() });
 
 		/// <summary>
-		/// Get the method info for <see cref="IObjectResolver.GetObject{T}()"/>
+		/// Get the method info for <see cref="IObjectResolver.ResolveObject{T}()"/>
 		/// </summary>
-		private static readonly MethodInfo getObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.GetObject), 1, Type.EmptyTypes);
+		private static readonly MethodInfo getObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.ResolveObject), 1, Type.EmptyTypes);
 
 		/// <summary>
-		/// Get the method info for <see cref="IObjectResolver.TryGetObject{T}(out T)"/>
+		/// Get the method info for <see cref="IObjectResolver.TryResolveObject{T}(out T)"/>
 		/// </summary>
-		private static readonly MethodInfo tryGetObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.TryGetObject), 1, new Type[] { Type.MakeGenericMethodParameter(0).MakeByRefType() });
+		private static readonly MethodInfo tryGetObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.TryResolveObject), 1, new Type[] { Type.MakeGenericMethodParameter(0).MakeByRefType() });
 
 		/// <summary>
 		/// Get the method info for <see cref="Builder.Register{TBase, TDerived}(Lifetime)"/>
@@ -97,7 +97,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				Assert.IsFalse(container.TryGetType(types.Item1, out _));
+				Assert.IsFalse(container.TryResolveType(types.Item1, out _));
 
 				// Test generic method as well
 				MethodInfo methodInfo = tryGetTypeMethod;
@@ -117,7 +117,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				Assert.IsFalse(container.TryGetObject(types.Item1, out _));
+				Assert.IsFalse(container.TryResolveObject(types.Item1, out _));
 
 				// Test generic method as well
 				MethodInfo methodInfo = tryGetObjectMethod;
@@ -137,7 +137,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				Assert.Throws<InjectionException>(() => container.GetType(types.Item1));
+				Assert.Throws<InjectionException>(() => container.ResolveType(types.Item1));
 
 				// Test generic method as well
 				MethodInfo methodInfo = getTypeMethod;
@@ -157,7 +157,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				Assert.Throws<InjectionException>(() => container.GetObject(types.Item1));
+				Assert.Throws<InjectionException>(() => container.ResolveObject(types.Item1));
 
 				// Test generic method as well
 				MethodInfo methodInfo = getObjectMethod;
@@ -178,7 +178,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				Assert.AreEqual(types.Item2, container.GetType(types.Item1));
+				Assert.AreEqual(types.Item2, container.ResolveType(types.Item1));
 
 				// Test generic method as well
 				MethodInfo methodInfo = getTypeMethod;
@@ -199,7 +199,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				Assert.IsTrue(container.TryGetObject(types.Item1, out _));
+				Assert.IsTrue(container.TryResolveObject(types.Item1, out _));
 
 				// Test generic method as well
 				MethodInfo methodInfo = tryGetObjectMethod;
@@ -222,7 +222,7 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				assert(container.GetObject(types.Item1), container.GetObject(types.Item1));
+				assert(container.ResolveObject(types.Item1), container.ResolveObject(types.Item1));
 
 				// Test generic method as well
 				MethodInfo methodInfo = getObjectMethod;
@@ -247,9 +247,9 @@ namespace Kryz.DI.Tests
 			// Assert
 			foreach ((Type, Type) types in SafeTypes)
 			{
-				assert(container.GetObject(types.Item1), child1.GetObject(types.Item1));
-				assert(container.GetObject(types.Item1), child2.GetObject(types.Item1));
-				assert(child1.GetObject(types.Item1), child2.GetObject(types.Item1));
+				assert(container.ResolveObject(types.Item1), child1.ResolveObject(types.Item1));
+				assert(container.ResolveObject(types.Item1), child2.ResolveObject(types.Item1));
+				assert(child1.ResolveObject(types.Item1), child2.ResolveObject(types.Item1));
 
 				// Test generic method as well
 				MethodInfo methodInfo = getObjectMethod;
@@ -299,9 +299,9 @@ namespace Kryz.DI.Tests
 				Assert.Throws<InjectionException>(() => root.Inject(generic));
 
 				child.Inject(generic);
-				Assert.AreEqual(child.GetObject<IA>(), generic.One);
-				Assert.AreEqual(child.GetObject<IB>(), generic.Two);
-				Assert.AreEqual(child.GetObject<IC>(), generic.Three);
+				Assert.AreEqual(child.ResolveObject<IA>(), generic.One);
+				Assert.AreEqual(child.ResolveObject<IB>(), generic.Two);
+				Assert.AreEqual(child.ResolveObject<IC>(), generic.Three);
 			}
 		}
 
@@ -314,21 +314,21 @@ namespace Kryz.DI.Tests
 
 			int startingCount = InstanceCounter.Count;
 
-			rootScoped.TryGetObject<InstanceCounter>(out _);
+			rootScoped.TryResolveObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
-			Assert.IsTrue(rootScoped.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(rootScoped.TryResolveObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 1, InstanceCounter.Count);
 
-			childScoped.TryGetObject<InstanceCounter>(out _);
+			childScoped.TryResolveObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
-			Assert.IsTrue(childScoped.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(childScoped.TryResolveObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 2, InstanceCounter.Count);
 
-			childTransient.TryGetObject<InstanceCounter>(out _);
+			childTransient.TryResolveObject<InstanceCounter>(out _);
 			Assert.AreEqual(startingCount + 3, InstanceCounter.Count);
-			Assert.IsTrue(childTransient.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(childTransient.TryResolveObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 4, InstanceCounter.Count);
-			Assert.IsTrue(childTransient.TryGetObject<InstanceCounter>(out _));
+			Assert.IsTrue(childTransient.TryResolveObject<InstanceCounter>(out _));
 			Assert.AreEqual(startingCount + 5, InstanceCounter.Count);
 		}
 

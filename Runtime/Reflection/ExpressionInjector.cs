@@ -10,11 +10,12 @@ namespace Kryz.DI.Reflection
 		private delegate object CreateDelegate(IObjectResolver resolver);
 		private delegate void InjectDelegate(object obj, IObjectResolver resolver);
 
-		private static readonly MethodInfo getObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.GetObject), Type.EmptyTypes);
+		private static readonly MethodInfo getObjectMethod = typeof(IObjectResolver).GetMethod(nameof(IObjectResolver.ResolveObject), Type.EmptyTypes);
 
 		private readonly ReflectionCache reflectionCache;
 		private readonly Dictionary<Type, CreateDelegate> createCache = new();
 		private readonly Dictionary<Type, InjectDelegate> injectCache = new();
+		private readonly Dictionary<Type, MethodInfo> genericGetObjectCache = new();
 
 		public ExpressionInjector(ReflectionCache? reflectionCache = null)
 		{
@@ -125,7 +126,7 @@ namespace Kryz.DI.Reflection
 			{
 				FieldInfo item = info.Fields[i];
 				MemberExpression variable = Expression.Field(castObj, item);
-				MethodInfo genericGetObject = getObjectMethod.MakeGenericMethod(item.FieldType);
+				MethodInfo genericGetObject = GetGenericGetObjectMethod(item.FieldType);
 				MethodCallExpression getObject = Expression.Call(resolverParam, genericGetObject);
 				expressions.Add(Expression.Assign(variable, getObject));
 			}
@@ -134,7 +135,7 @@ namespace Kryz.DI.Reflection
 			{
 				PropertyInfo item = info.Properties[i];
 				MemberExpression property = Expression.MakeMemberAccess(castObj, item);
-				MethodInfo genericGetObject = getObjectMethod.MakeGenericMethod(item.PropertyType);
+				MethodInfo genericGetObject = GetGenericGetObjectMethod(item.PropertyType);
 				MethodCallExpression getObject = Expression.Call(resolverParam, genericGetObject);
 				expressions.Add(Expression.Assign(property, getObject));
 			}
@@ -147,7 +148,7 @@ namespace Kryz.DI.Reflection
 				Expression[] methodParams = new Expression[paramTypes.Count];
 				for (int j = 0; j < paramTypes.Count; j++)
 				{
-					MethodInfo genericGetObject = getObjectMethod.MakeGenericMethod(paramTypes[j]);
+					MethodInfo genericGetObject = GetGenericGetObjectMethod(paramTypes[j]);
 					methodParams[j] = Expression.Call(resolverParam, genericGetObject);
 				}
 				expressions.Add(Expression.Call(castObj, item, methodParams));
@@ -156,6 +157,15 @@ namespace Kryz.DI.Reflection
 			BlockExpression body = Expression.Block(expressions);
 
 			return Expression.Lambda<InjectDelegate>(body, objParam, resolverParam).Compile();
+		}
+
+		private MethodInfo GetGenericGetObjectMethod(Type type)
+		{
+			if (!genericGetObjectCache.TryGetValue(type, out MethodInfo genericGetObject))
+			{
+				genericGetObjectCache[type] = genericGetObject = getObjectMethod.MakeGenericMethod(type);
+			}
+			return genericGetObject;
 		}
 	}
 }
