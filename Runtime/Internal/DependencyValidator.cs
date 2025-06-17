@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Kryz.Collections;
+using Kryz.Utils;
 
 namespace Kryz.DI.Internal
 {
@@ -20,7 +21,7 @@ namespace Kryz.DI.Internal
 
 		public static Data Validate<T>(ITypeResolver resolver, IInjector injector, T registrations, IReadOnlyDictionary<Type, object> objects) where T : IReadOnlyDictionary<Type, Registration>
 		{
-			NonAllocList<Type> visitedTypes = new();
+			using PooledList<Type> visitedTypes = PooledList<Type>.Rent();
 			Dictionary<Type, IReadOnlyList<Type>>? missing = null;
 			Dictionary<Type, IReadOnlyList<Type>>? circular = null;
 
@@ -34,7 +35,7 @@ namespace Kryz.DI.Internal
 					missing[item.Key] = missingTypes;
 				}
 
-				if (HasCircularDependency(resolvedType, injector, registrations, objects, ref visitedTypes))
+				if (HasCircularDependency(resolvedType, injector, registrations, objects, visitedTypes))
 				{
 					circular ??= new Dictionary<Type, IReadOnlyList<Type>>();
 					circular[item.Key] = visitedTypes.ToArray();
@@ -65,7 +66,7 @@ namespace Kryz.DI.Internal
 			return missing.Count > 0;
 		}
 
-		public static bool HasCircularDependency(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, ref NonAllocList<Type> visitedTypes)
+		public static bool HasCircularDependency(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, PooledList<Type> visitedTypes)
 		{
 			if (visitedTypes.Contains(type))
 			{
@@ -80,7 +81,7 @@ namespace Kryz.DI.Internal
 				Type dependency = dependencies[i];
 				if (registrations.TryGetValue(dependency, out Registration registration) && !objects.ContainsKey(dependency))
 				{
-					if (HasCircularDependency(registration.Type, injector, registrations, objects, ref visitedTypes))
+					if (HasCircularDependency(registration.Type, injector, registrations, objects, visitedTypes))
 					{
 						return true;
 					}
