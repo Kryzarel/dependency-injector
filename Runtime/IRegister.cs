@@ -1,6 +1,6 @@
 namespace Kryz.DI
 {
-	public interface IScopeBuilder
+	public interface IRegister
 	{
 		IBuilder Register<T>(Lifetime lifetime);
 		IBuilder Register<TBase, TDerived>(Lifetime lifetime) where TDerived : TBase;

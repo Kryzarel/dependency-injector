@@ -128,7 +128,7 @@ namespace Kryz.DI.Internal
 			return new Builder(this).Build();
 		}
 
-		public IContainer CreateScope(Action<IScopeBuilder> builderAction)
+		public IContainer CreateScope(Action<IRegister> builderAction)
 		{
 			Builder builder = new(this);
 			builderAction(builder);

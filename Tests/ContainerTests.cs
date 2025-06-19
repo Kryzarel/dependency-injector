@@ -347,7 +347,7 @@ namespace Kryz.DI.Tests
 		}
 
 		// TODO: Possibly change to private after deleting ContainerTestHelper
-		public static void Register(IScopeBuilder builder, (Type, Type)[] registerTypes, Lifetime lifetime)
+		public static void Register(IRegister builder, (Type, Type)[] registerTypes, Lifetime lifetime)
 		{
 			foreach ((Type, Type) types in registerTypes)
 			{
@@ -355,7 +355,7 @@ namespace Kryz.DI.Tests
 			}
 		}
 
-		private static void Register(IScopeBuilder builder, (Type, Type) types, Lifetime lifetime)
+		private static void Register(IRegister builder, (Type, Type) types, Lifetime lifetime)
 		{
 			MethodInfo registerMethodGeneric = registerMethod.MakeGenericMethod(types.Item1, types.Item2);
 			registerMethodGeneric.Invoke(builder, new object[] { lifetime });

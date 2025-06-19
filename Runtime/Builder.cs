@@ -7,7 +7,7 @@ using Kryz.DI.Reflection;
 
 namespace Kryz.DI
 {
-	public class Builder : IBuilder, IScopeBuilder
+	public class Builder : IBuilder
 	{
 		private static readonly ReflectionInjector reflectionInjector;
 		private static readonly ExpressionInjector expressionInjector;
@@ -55,9 +55,9 @@ namespace Kryz.DI
 			return this;
 		}
 
-		IBuilder IScopeBuilder.Register<T>(Lifetime lifetime) => Register<T>(lifetime);
-		IBuilder IScopeBuilder.Register<TBase, TDerived>(Lifetime lifetime) => Register<TBase, TDerived>(lifetime);
-		IBuilder IScopeBuilder.Register<T>(T obj) => Register(obj);
+		IBuilder IRegister.Register<T>(Lifetime lifetime) => Register<T>(lifetime);
+		IBuilder IRegister.Register<TBase, TDerived>(Lifetime lifetime) => Register<TBase, TDerived>(lifetime);
+		IBuilder IRegister.Register<T>(T obj) => Register(obj);
 
 		public IContainer Build()
 		{

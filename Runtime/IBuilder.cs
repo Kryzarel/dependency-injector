@@ -1,6 +1,6 @@
 namespace Kryz.DI
 {
-	public interface IBuilder : IScopeBuilder
+	public interface IBuilder : IRegister
 	{
 		IContainer Build();
 	}
