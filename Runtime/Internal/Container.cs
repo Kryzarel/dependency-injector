@@ -25,7 +25,7 @@ namespace Kryz.DI.Internal
 			Injector = injector;
 			this.objects = objects;
 			this.registrations = registrations;
-			ChildScopes = childScopes = new PooledList<Container>();
+			ChildScopes = childScopes = PooledList<Container>.Rent();
 		}
 
 		internal Container(Container parent, Dictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
