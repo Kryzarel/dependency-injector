@@ -159,12 +159,7 @@ namespace Kryz.DI.Internal
 
 			objects.Clear();
 			registrations.Clear();
-			childScopes.Clear();
-		}
-
-		~Container()
-		{
-			Dispose();
+			childScopes.Dispose();
 		}
 
 		private object GetOrCreateObject(Type type, Type resolvedType)

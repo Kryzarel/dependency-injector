@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Kryz.Collections;
-using Kryz.Utils;
 
 namespace Kryz.DI.Internal
 {
@@ -66,7 +65,7 @@ namespace Kryz.DI.Internal
 			return missing.Count > 0;
 		}
 
-		public static bool HasCircularDependency(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, PooledList<Type> visitedTypes)
+		public static bool HasCircularDependency(Type type, IInjector injector, IReadOnlyDictionary<Type, Registration> registrations, IReadOnlyDictionary<Type, object> objects, IList<Type> visitedTypes)
 		{
 			if (visitedTypes.Contains(type))
 			{
