@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Kryz.Collections;
 using Kryz.Utils;
 
 namespace Kryz.DI.Reflection
@@ -40,47 +41,64 @@ namespace Kryz.DI.Reflection
 		private static readonly Type injectAttribute = typeof(InjectAttribute);
 
 		private readonly Dictionary<Type, InjectionInfo> cache = new();
-		private readonly List<Type> constructorParams = new();
-		private readonly List<FieldInfo> fields = new();
-		private readonly List<PropertyInfo> properties = new();
-		private readonly List<MethodInfo> methods = new();
-		private readonly HashSet<Type> allDependencies = new();
 
 		public InjectionInfo GetInfo(Type type)
 		{
-			if (!cache.TryGetValue(type, out InjectionInfo info))
+			if (!TryGetFromCache(type, out InjectionInfo info))
 			{
-				cache[type] = info = ProcessType(type);
+				info = ProcessType(type);
+				AddToCache(type, info);
 			}
 			return info;
+		}
+
+		private bool TryGetFromCache(Type type, out InjectionInfo info)
+		{
+			lock (cache)
+			{
+				return cache.TryGetValue(type, out info);
+			}
+		}
+
+		private void AddToCache(Type type, InjectionInfo info)
+		{
+			lock (cache)
+			{
+				cache[type] = info;
+			}
 		}
 
 		private InjectionInfo ProcessType(Type type)
 		{
 			ConstructorInfo? constructor = GetInjectConstructor(type);
-			GetConstructorParamTypes(constructor, constructorParams);
+			IReadOnlyList<Type> constructorParams = GetConstructorParamTypes(constructor);
+
+			using PooledList<FieldInfo> fields = PooledList<FieldInfo>.Rent();
+			using PooledList<PropertyInfo> properties = PooledList<PropertyInfo>.Rent();
+			using PooledList<MethodInfo> methods = PooledList<MethodInfo>.Rent();
 
 			type.GetAllFieldsWithAttribute(flags, injectAttribute, fields);
 			type.GetAllPropertiesWithAttribute(flags, injectAttribute, properties);
 			type.GetAllMethodsWithAttribute(flags, injectAttribute, methods);
 
 			IReadOnlyList<IReadOnlyList<Type>> methodParams = GetMethodParamTypes(methods);
-			GetAllDependencies(constructorParams, fields, properties, methods, methodParams, allDependencies);
+
+			int count = constructorParams.Count + fields.Count + properties.Count;
+			for (int i = 0; i < methodParams.Count; i++)
+			{
+				count += methodParams[i].Count;
+			}
+			using PooledList<Type> allDependencies = PooledList<Type>.Rent(count);
+			GetAllDependencies(constructorParams, fields, properties, methodParams, allDependencies);
 
 			InjectionInfo injectionInfo = new(
 				constructor,
-				GetArray(constructorParams),
-				GetArray(fields),
-				GetArray(properties),
-				GetArray(methods),
+				constructorParams,
+				fields.ToArray(),
+				properties.ToArray(),
+				methods.ToArray(),
 				methodParams,
-				GetArray(allDependencies));
-
-			constructorParams.Clear();
-			fields.Clear();
-			properties.Clear();
-			methods.Clear();
-			allDependencies.Clear();
+				allDependencies.ToArray());
 
 			return injectionInfo;
 		}
@@ -106,32 +124,32 @@ namespace Kryz.DI.Reflection
 			return null;
 		}
 
-		private static void GetConstructorParamTypes(ConstructorInfo? constructor, List<Type> constructorParams)
+		private static Type[] GetConstructorParamTypes(ConstructorInfo? constructor)
 		{
-			if (constructor != null)
+			if (constructor == null)
 			{
-				ParameterInfo[] parameters = constructor.GetParameters();
-				if (constructorParams.Capacity < parameters.Length)
-				{
-					constructorParams.Capacity = parameters.Length;
-				}
-
-				foreach (ParameterInfo item in parameters)
-				{
-					constructorParams.Add(item.ParameterType);
-				}
+				return Array.Empty<Type>();
 			}
+
+			ParameterInfo[] parameters = constructor.GetParameters();
+			Type[] constructorParams = parameters.Length == 0 ? Array.Empty<Type>() : new Type[parameters.Length];
+
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				constructorParams[i] = parameters[i].ParameterType;
+			}
+			return constructorParams;
 		}
 
 		private static Type[][] GetMethodParamTypes(IReadOnlyList<MethodInfo> methods)
 		{
-			Type[][] methodParams = new Type[methods.Count][];
+			Type[][] methodParams = methods.Count == 0 ? Array.Empty<Type[]>() : new Type[methods.Count][];
 			for (int i = 0; i < methodParams.Length; i++)
 			{
 				ParameterInfo[] parameters = methods[i].GetParameters();
-				methodParams[i] = new Type[parameters.Length];
+				methodParams[i] = parameters.Length == 0 ? Array.Empty<Type>() : new Type[parameters.Length];
 
-				for (int j = 0; j < methodParams[i].Length; j++)
+				for (int j = 0; j < parameters.Length; j++)
 				{
 					methodParams[i][j] = parameters[j].ParameterType;
 				}
@@ -143,52 +161,49 @@ namespace Kryz.DI.Reflection
 			IReadOnlyList<Type> constructorParams,
 			IReadOnlyList<FieldInfo> fields,
 			IReadOnlyList<PropertyInfo> properties,
-			IReadOnlyList<MethodInfo> methods,
 			IReadOnlyList<IReadOnlyList<Type>> methodParams,
-			HashSet<Type> allDependencies)
+			IList<Type> allDependencies)
 		{
-			int count = constructorParams.Count + fields.Count + properties.Count;
-			for (int i = 0; i < methodParams.Count; i++)
-			{
-				count += methodParams[i].Count;
-			}
-
-			allDependencies.EnsureCapacity(count);
-
 			for (int i = 0; i < constructorParams.Count; i++)
 			{
-				allDependencies.Add(constructorParams[i]);
+				Type item = constructorParams[i];
+				if (!allDependencies.Contains(item))
+				{
+					allDependencies.Add(item);
+				}
 			}
 
 			for (int i = 0; i < fields.Count; i++)
 			{
-				allDependencies.Add(fields[i].FieldType);
+				Type item = fields[i].FieldType;
+				if (!allDependencies.Contains(item))
+				{
+					allDependencies.Add(item);
+				}
 			}
 
 			for (int i = 0; i < properties.Count; i++)
 			{
-				allDependencies.Add(properties[i].PropertyType);
+				Type item = properties[i].PropertyType;
+				if (!allDependencies.Contains(item))
+				{
+					allDependencies.Add(item);
+				}
 			}
 
-			for (int i = 0; i < methods.Count; i++)
+			for (int i = 0; i < methodParams.Count; i++)
 			{
 				IReadOnlyList<Type> paramTypes = methodParams[i];
 
 				for (int j = 0; j < paramTypes.Count; j++)
 				{
-					allDependencies.Add(paramTypes[j]);
+					Type item = paramTypes[j];
+					if (!allDependencies.Contains(item))
+					{
+						allDependencies.Add(item);
+					}
 				}
 			}
-		}
-
-		private static T[] GetArray<T>(List<T> list)
-		{
-			return list.Count > 0 ? list.ToArray() : Array.Empty<T>();
-		}
-
-		private static T[] GetArray<T>(HashSet<T> set)
-		{
-			return set.Count > 0 ? set.ToArray() : Array.Empty<T>();
 		}
 	}
 }
