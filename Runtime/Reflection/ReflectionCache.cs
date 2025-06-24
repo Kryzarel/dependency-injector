@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Kryz.Collections;
 using Kryz.Utils;
 
 namespace Kryz.DI.Reflection
