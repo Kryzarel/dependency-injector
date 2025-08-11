@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 using Kryz.DI.Exceptions;
+using Kryz.Utils;
 
 namespace Kryz.DI.Reflection
 {
 	public class ReflectionInjector : IInjector
 	{
 		private readonly ReflectionCache reflectionCache;
-		// If you have a method with 32 parameters or more, kindly reconsider.
-		private readonly object[][] paramCache = new object[32][];
+		private readonly ExactSizeArrayPool<object> arrayPool;
 
 		public ReflectionInjector(ReflectionCache? reflectionCache = null)
 		{
-			paramCache[0] = Array.Empty<object>();
+			arrayPool = ExactSizeArrayPool<object>.Shared;
 			this.reflectionCache = reflectionCache ?? new();
 		}
 
@@ -25,14 +25,14 @@ namespace Kryz.DI.Reflection
 			if (info.Constructor != null)
 			{
 				int paramLength = info.ConstructorParams.Count;
-				object[] constructorParams = GetFromParamCache(paramLength);
+				object[] constructorParams = arrayPool.Rent(paramLength);
 				for (int i = 0; i < paramLength; i++)
 				{
 					Type item = info.ConstructorParams[i];
 					constructorParams[i] = resolver.ResolveObject(item);
 				}
 				object obj = info.Constructor.Invoke(constructorParams);
-				ReturnToParamCache(constructorParams);
+				arrayPool.Return(constructorParams, clearArray: true);
 				return obj;
 			}
 			else if (!type.IsAbstract)
@@ -64,29 +64,19 @@ namespace Kryz.DI.Reflection
 				MethodInfo item = info.Methods[i];
 				IReadOnlyList<Type> paramTypes = info.MethodParams[i];
 
-				object[] methodParams = GetFromParamCache(paramTypes.Count);
+				object[] methodParams = arrayPool.Rent(paramTypes.Count);
 				for (int j = 0; j < methodParams.Length; j++)
 				{
 					methodParams[j] = resolver.ResolveObject(paramTypes[j]);
 				}
 				item.Invoke(obj, methodParams);
-				ReturnToParamCache(methodParams);
+				arrayPool.Return(methodParams, clearArray: true);
 			}
 		}
 
 		public IReadOnlyList<Type> GetDependencies(Type type)
 		{
 			return reflectionCache.GetInfo(type).AllDependencies;
-		}
-
-		private object[] GetFromParamCache(int length)
-		{
-			return length < paramCache.Length ? (paramCache[length] ??= new object[length]) : new object[length];
-		}
-
-		private void ReturnToParamCache(object[] parameters)
-		{
-			Array.Clear(parameters, 0, parameters.Length);
 		}
 	}
 }
