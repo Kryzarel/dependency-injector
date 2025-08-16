@@ -87,6 +87,7 @@ namespace Kryz.DI.Reflection
 			{
 				count += methodParams[i].Count;
 			}
+
 			using PooledList<Type> allDependencies = PooledList<Type>.Rent(count);
 
 			GetAllDependencies(constructorParams, fields, properties, methodParams, allDependencies);

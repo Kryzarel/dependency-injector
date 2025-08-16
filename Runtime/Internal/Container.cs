@@ -20,7 +20,7 @@ namespace Kryz.DI.Internal
 		IContainer? IContainer.Parent => Parent;
 		IReadOnlyList<IContainer> IContainer.ChildScopes => ChildScopes;
 
-		internal Container(IInjector injector, Dictionary<Type, Registration> registrations, Dictionary<Type, object> objects)
+		internal Container(IInjector injector, Dictionary<Type, object> objects, Dictionary<Type, Registration> registrations)
 		{
 			Injector = injector;
 			this.objects = objects;
@@ -28,7 +28,7 @@ namespace Kryz.DI.Internal
 			ChildScopes = childScopes = PooledList<Container>.Rent();
 		}
 
-		internal Container(Container parent, Dictionary<Type, Registration> registrations, Dictionary<Type, object> objects) : this(parent.Injector, registrations, objects)
+		internal Container(Container parent, Dictionary<Type, object> objects, Dictionary<Type, Registration> registrations) : this(parent.Injector, objects, registrations)
 		{
 			Parent = parent;
 			Parent.childScopes.Add(this);
@@ -75,11 +75,6 @@ namespace Kryz.DI.Internal
 
 		public bool TryResolveObject(Type type, [MaybeNullWhen(returnValue: false)] out object obj)
 		{
-			if (objects.TryGetValue(type, out obj))
-			{
-				return true;
-			}
-
 			for (Container? container = this; container != null; container = container.Parent)
 			{
 				if (container.registrations.TryGetValue(type, out Registration registration))
@@ -128,7 +123,7 @@ namespace Kryz.DI.Internal
 			return new Builder(this).Build();
 		}
 
-		public IContainer CreateScope(Action<IRegister> builderAction)
+		public IContainer CreateScope(Action<IBuilder> builderAction)
 		{
 			Builder builder = new(this);
 			builderAction(builder);

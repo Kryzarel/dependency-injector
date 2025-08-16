@@ -17,8 +17,6 @@ namespace Kryz.DI
 		private readonly Dictionary<Type, object> objects = new();
 		private readonly Dictionary<Type, Registration> registrations = new();
 
-		private Container? container;
-
 		static Builder()
 		{
 			ReflectionCache reflectionCache = new();
@@ -50,28 +48,25 @@ namespace Kryz.DI
 
 		public Builder Register<T>(T obj) where T : notnull
 		{
-			objects[typeof(T)] = obj;
-			registrations[typeof(T)] = new Registration(obj.GetType(), Lifetime.Singleton);
+			Register(obj, objects, registrations);
 			return this;
 		}
 
-		IBuilder IRegister.Register<T>(Lifetime lifetime) => Register<T>(lifetime);
-		IBuilder IRegister.Register<TBase, TDerived>(Lifetime lifetime) => Register<TBase, TDerived>(lifetime);
-		IBuilder IRegister.Register<T>(T obj) => Register(obj);
+		IBuilder IBuilder.Register<T>(Lifetime lifetime) => Register<T>(lifetime);
+		IBuilder IBuilder.Register<TBase, TDerived>(Lifetime lifetime) => Register<TBase, TDerived>(lifetime);
+		IBuilder IBuilder.Register<T>(T obj) => Register(obj);
 
 		public IContainer Build()
 		{
-			if (container != null)
-			{
-				throw new InvalidOperationException($"Can't build from the same {nameof(Builder)} more than once.");
-			}
+			Dictionary<Type, object> objects = new(this.objects);
+			Dictionary<Type, Registration> registrations = new(this.registrations);
 
-			container = parent != null ? new Container(parent, registrations, objects) : new Container(injector, registrations, objects);
+			Container container = parent != null ? new Container(parent, objects, registrations) : new Container(injector, objects, registrations);
 
 			// Register the Container itself
-			Register<IContainer>(container);
-			Register<IObjectResolver>(container);
-			Register<ITypeResolver>(container);
+			Register<IContainer>(container, objects, registrations);
+			Register<IObjectResolver>(container, objects, registrations);
+			Register<ITypeResolver>(container, objects, registrations);
 
 			DependencyValidator.Data data = DependencyValidator.Validate(container, container.Injector, registrations, objects);
 			if (data.MissingDependencies != null && data.MissingDependencies.Count > 0)
@@ -83,6 +78,12 @@ namespace Kryz.DI
 				throw new CircularDependencyException($"Can't build a container with circular dependencies: {FormatCircularDependencies(data.CircularDependencies)}");
 			}
 			return container;
+		}
+
+		private static void Register<T>(T obj, Dictionary<Type, object> objects, Dictionary<Type, Registration> registrations) where T : notnull
+		{
+			objects[typeof(T)] = obj;
+			registrations[typeof(T)] = new Registration(obj.GetType(), Lifetime.Singleton);
 		}
 
 		private static string FormatMissingDependencies(IReadOnlyDictionary<Type, IReadOnlyList<Type>> dict)

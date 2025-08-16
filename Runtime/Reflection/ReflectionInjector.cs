@@ -12,10 +12,10 @@ namespace Kryz.DI.Reflection
 		private readonly ReflectionCache reflectionCache;
 		private readonly ExactSizeArrayPool<object> arrayPool;
 
-		public ReflectionInjector(ReflectionCache? reflectionCache = null)
+		public ReflectionInjector(ReflectionCache? reflectionCache = null, ExactSizeArrayPool<object>? arrayPool = null)
 		{
-			arrayPool = ExactSizeArrayPool<object>.Shared;
-			this.reflectionCache = reflectionCache ?? new();
+			this.reflectionCache = reflectionCache ?? new ReflectionCache();
+			this.arrayPool = arrayPool ?? ExactSizeArrayPool<object>.Shared;
 		}
 
 		public object CreateObject(Type type, IObjectResolver resolver)

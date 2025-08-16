@@ -18,7 +18,7 @@ namespace Kryz.DI.Tests
 			Dictionary<Type, Registration> registrations = new();
 
 			IInjector injector = new ReflectionInjector();
-			Container container = new(injector, registrations, objects);
+			Container container = new(injector, objects, registrations);
 
 			registrations[typeof(IA)] = new Registration(typeof(ACircularDependsOnE), Lifetime.Singleton);
 			registrations[typeof(IB)] = new Registration(typeof(B), Lifetime.Singleton);
@@ -51,7 +51,7 @@ namespace Kryz.DI.Tests
 			Dictionary<Type, Registration> registrations = new();
 
 			IInjector injector = new ReflectionInjector();
-			Container container = new(injector, registrations, objects);
+			Container container = new(injector, objects, registrations);
 
 			registrations[typeof(ICircular1DependsOn2)] = new Registration(typeof(Circular1), Lifetime.Singleton);
 			registrations[typeof(ICircular2DependsOn3)] = new Registration(typeof(Circular2), Lifetime.Singleton);
@@ -85,7 +85,7 @@ namespace Kryz.DI.Tests
 			Dictionary<Type, Registration> registrations = new();
 
 			IInjector injector = new ReflectionInjector();
-			Container container = new(injector, registrations, objects);
+			Container container = new(injector, objects, registrations);
 
 			// registrations[typeof(IA)] = new Registration(typeof(A), Lifetime.Singleton);
 			// registrations[typeof(IB)] = new Registration(typeof(B), Lifetime.Singleton);
