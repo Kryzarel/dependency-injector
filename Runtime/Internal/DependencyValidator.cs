@@ -18,7 +18,7 @@ namespace Kryz.DI.Internal
 			}
 		}
 
-		public static Data Validate<T>(ITypeResolver resolver, IInjector injector, T registrations, IReadOnlyDictionary<Type, object> objects) where T : IReadOnlyDictionary<Type, Registration>
+		public static Data Validate(ITypeResolver resolver, IInjector injector, IReadOnlyDictionary<Type, object> objects, IReadOnlyDictionary<Type, Registration> registrations)
 		{
 			using PooledList<Type> visitedTypes = PooledList<Type>.Rent();
 			Dictionary<Type, IReadOnlyList<Type>>? missing = null;

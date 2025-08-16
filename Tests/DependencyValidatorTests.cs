@@ -27,7 +27,7 @@ namespace Kryz.DI.Tests
 			registrations[typeof(IE)] = new Registration(typeof(E), Lifetime.Singleton);
 
 			// Act
-			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, registrations, objects);
+			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, objects, registrations);
 
 			// Assert
 			Assert.IsNull(data.MissingDependencies);
@@ -58,7 +58,7 @@ namespace Kryz.DI.Tests
 			registrations[typeof(ICircular3DependsOn1)] = new Registration(typeof(Circular3), Lifetime.Singleton);
 
 			// Act
-			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, registrations, objects);
+			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, objects, registrations);
 
 			// Assert
 			Assert.IsNull(data.MissingDependencies);
@@ -94,7 +94,7 @@ namespace Kryz.DI.Tests
 			registrations[typeof(IE)] = new Registration(typeof(E), Lifetime.Singleton);
 
 			// Act
-			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, registrations, objects);
+			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, objects, registrations);
 
 			// Assert
 			Assert.IsNull(data.CircularDependencies);

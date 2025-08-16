@@ -68,7 +68,7 @@ namespace Kryz.DI
 			Register<IObjectResolver>(container, objects, registrations);
 			Register<ITypeResolver>(container, objects, registrations);
 
-			DependencyValidator.Data data = DependencyValidator.Validate(container, container.Injector, registrations, objects);
+			DependencyValidator.Data data = DependencyValidator.Validate(container, container.Injector, objects, registrations);
 			if (data.MissingDependencies != null && data.MissingDependencies.Count > 0)
 			{
 				throw new MissingDependencyException($"Can't build a container with missing dependencies: {FormatMissingDependencies(data.MissingDependencies)}");
