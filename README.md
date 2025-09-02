@@ -1,6 +1,6 @@
 # Dependency Injector
 
-Dependency Injection framework for C# and Unity. This package contains pure C# code only. Even though it is formatted as Unity package, it *should* be usable in any C# project. An additional package will be released *soon(tm)* which contains Unity-specific code for better integration with the engine.
+Dependency Injection framework for C# and Unity. This package contains pure C# code only. Even though it is formatted as a Unity package, it *should* be usable in any C# project. An additional package will be released *soon(tm)* which contains Unity-specific code for better integration with the engine.
 
 ### YouTube Tutorial: https://youtu.be/Z0J-PDZBhqc
 
