@@ -11,6 +11,27 @@ namespace Kryz.DI.Tests
 	{
 		[Test]
 		// Given, When, Then
+		public void ExistingObject_NoMissingDependencies()
+		{
+			// Arrange
+			Dictionary<Type, object> objects = new();
+			Dictionary<Type, Registration> registrations = new();
+
+			IInjector injector = new ReflectionInjector();
+			Container container = new(injector, objects, registrations);
+
+			objects[typeof(IB)] = new B(new A());
+			registrations[typeof(IB)] = new Registration(typeof(B), Lifetime.Singleton);
+
+			// Act
+			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, objects, registrations);
+
+			// Assert
+			Assert.IsNull(data.MissingDependencies);
+		}
+
+		[Test]
+		// Given, When, Then
 		public void CircularDependency_Path_ABCDE()
 		{
 			// Arrange

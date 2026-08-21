@@ -26,6 +26,9 @@ namespace Kryz.DI.Internal
 
 			foreach (KeyValuePair<Type, Registration> item in registrations)
 			{
+				// If the object already exists, there's no need to check its dependencies
+				if (objects.ContainsKey(item.Key)) continue;
+
 				Type resolvedType = item.Value.Type;
 
 				if (HasMissingDependency(resolvedType, resolver, injector, out IReadOnlyList<Type> missingTypes))
