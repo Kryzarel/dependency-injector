@@ -28,6 +28,40 @@ namespace Kryz.DI.Tests
 
 			// Assert
 			Assert.IsNull(data.MissingDependencies);
+			Assert.IsNull(data.CircularDependencies);
+		}
+
+		[Test]
+		// Given, When, Then
+		public void InParams_NoExceptions()
+		{
+			// Arrange
+			Dictionary<Type, object> objects = new();
+			Dictionary<Type, Registration> registrations = new();
+
+			IInjector injector = new ReflectionInjector();
+			Container container = new(injector, objects, registrations);
+
+			const int value = 1;
+
+			objects[typeof(int)] = value;
+			registrations[typeof(int)] = new Registration(typeof(int), Lifetime.Singleton);
+			registrations[typeof(ClassWithRefParams)] = new Registration(typeof(ClassWithRefParams), Lifetime.Singleton);
+
+			// Act
+			DependencyValidator.Data data = DependencyValidator.Validate(container, injector, objects, registrations);
+
+			// Assert
+			Assert.IsNull(data.MissingDependencies);
+			Assert.IsNull(data.CircularDependencies);
+
+			ClassWithRefParams classWithInParam = container.ResolveObject<ClassWithRefParams>();
+			Assert.AreEqual(value, classWithInParam.IntReadonly);
+			Assert.AreEqual(value, classWithInParam.IntIn);
+			Assert.AreEqual(value, classWithInParam.IntRef);
+			Assert.AreEqual(default(int), classWithInParam.IntOut);
+
+			Assert.AreEqual(container.ResolveObject<int>(), value);
 		}
 
 		[Test]

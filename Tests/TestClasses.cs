@@ -209,4 +209,23 @@ namespace Kryz.DI.Tests
 			E = e;
 		}
 	}
+
+	public class ClassWithRefParams
+	{
+		public readonly int IntReadonly;
+		public int IntIn;
+		public int IntRef;
+		public int IntOut;
+
+		public ClassWithRefParams(in int int1) => IntReadonly = int1;
+
+		[Inject]
+		public void InjectIn(in int int2) => IntIn = int2;
+
+		[Inject]
+		public void InjectRef(ref int int3) => IntRef = int3;
+
+		[Inject]
+		public void InjectOut(out int int4) => int4 = IntOut;
+	}
 }

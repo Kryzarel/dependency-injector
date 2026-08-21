@@ -26,11 +26,15 @@ namespace Kryz.DI.Reflection
 			{
 				int paramLength = info.ConstructorParams.Count;
 				object[] constructorParams = arrayPool.Rent(paramLength);
+
 				for (int i = 0; i < paramLength; i++)
 				{
-					Type item = info.ConstructorParams[i];
-					constructorParams[i] = resolver.ResolveObject(item);
+					Type paramType = info.ConstructorParams[i];
+					if (paramType.IsByRef) paramType = paramType.GetElementType();
+
+					constructorParams[i] = resolver.ResolveObject(paramType);
 				}
+
 				object obj = info.Constructor.Invoke(constructorParams);
 				arrayPool.Return(constructorParams, clearArray: true);
 				return obj;
@@ -67,7 +71,10 @@ namespace Kryz.DI.Reflection
 				object[] methodParams = arrayPool.Rent(paramTypes.Count);
 				for (int j = 0; j < methodParams.Length; j++)
 				{
-					methodParams[j] = resolver.ResolveObject(paramTypes[j]);
+					Type paramType = paramTypes[j];
+					if (paramType.IsByRef) paramType = paramType.GetElementType();
+
+					methodParams[j] = resolver.ResolveObject(paramType);
 				}
 				item.Invoke(obj, methodParams);
 				arrayPool.Return(methodParams, clearArray: true);

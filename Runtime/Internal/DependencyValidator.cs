@@ -56,6 +56,8 @@ namespace Kryz.DI.Internal
 			for (int i = 0; i < dependencies.Count; i++)
 			{
 				Type dependency = dependencies[i];
+				if (dependency.IsByRef) dependency = dependency.GetElementType();
+
 				if (!resolver.TryResolveType(dependency, out _))
 				{
 					missingTypes ??= new List<Type>();
