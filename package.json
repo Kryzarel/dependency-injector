@@ -1,6 +1,6 @@
 {
   "name": "com.kryzarel.dependency-injector",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "displayName": "Kryz - Dependency Injector",
   "description": "A simple dependency injector.",
   "license": "MIT",
